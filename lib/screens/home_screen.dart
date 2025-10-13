@@ -55,8 +55,11 @@ class HomeScreen extends StatelessWidget {
     ];
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount =
-        screenWidth < 600 ? 2 : screenWidth < 900 ? 3 : 4;
+    final crossAxisCount = screenWidth < 600
+        ? 2
+        : screenWidth < 900
+            ? 3
+            : 4;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F8),
@@ -86,7 +89,7 @@ class HomeScreen extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final item = menuItems[index];
-                return _AnimatedMenuItem(item: item);
+                return _ControlledMenuItem(item: item);
               },
             ),
           );
@@ -96,87 +99,120 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _AnimatedMenuItem extends StatefulWidget {
+class _ControlledMenuItem extends StatefulWidget {
   final Map<String, dynamic> item;
-  const _AnimatedMenuItem({required this.item});
+  const _ControlledMenuItem({required this.item});
 
   @override
-  State<_AnimatedMenuItem> createState() => _AnimatedMenuItemState();
+  State<_ControlledMenuItem> createState() => _ControlledMenuItemState();
 }
 
-class _AnimatedMenuItemState extends State<_AnimatedMenuItem> {
-  bool _isHovered = false;
+class _ControlledMenuItemState extends State<_ControlledMenuItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _shadowAnimation;
+  late Animation<Color?> _colorAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    final color = widget.item['color'] as Color;
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.07)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _shadowAnimation = Tween<double>(begin: 6.0, end: 14.0)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _colorAnimation = ColorTween(begin: Colors.white, end: color.withOpacity(0.15))
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onHover(bool hover) {
+    if (hover) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final color = widget.item['color'] as Color;
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-        transform: Matrix4.identity()
-          ..scale(_isHovered ? 1.07 : 1.0), // Zoom halus saat hover
-        decoration: BoxDecoration(
-          color: _isHovered ? color.withOpacity(0.15) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: _isHovered
-                  ? color.withOpacity(0.4)
-                  : Colors.black12,
-              blurRadius: _isHovered ? 12 : 6,
-              offset: const Offset(2, 4),
+      onEnter: (_) => _onHover(true),
+      onExit: (_) => _onHover(false),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              decoration: BoxDecoration(
+                color: _colorAnimation.value,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.4),
+                    blurRadius: _shadowAnimation.value,
+                    offset: const Offset(2, 4),
+                  ),
+                ],
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () {
+                  if (widget.item['page'] != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => widget.item['page']),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Menu "${widget.item['title']}" belum aktif'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      widget.item['icon'] as IconData,
+                      color: color,
+                      size: 45 + (_controller.value * 7),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      widget.item['title'] as String,
+                      style: TextStyle(
+                        fontSize: 16 + (_controller.value * 2),
+                        fontWeight: FontWeight.w600,
+                        color: _controller.value > 0.5 ? color : Colors.black87,
+                        letterSpacing: 0.3 + (_controller.value * 0.3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            if (widget.item['page'] != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => widget.item['page']),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      'Menu "${widget.item['title']}" belum aktif'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
-          },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedScale(
-                duration: const Duration(milliseconds: 250),
-                scale: _isHovered ? 1.15 : 1.0,
-                curve: Curves.easeOutBack,
-                child: Icon(
-                  widget.item['icon'] as IconData,
-                  color: color,
-                  size: _isHovered ? 52 : 42,
-                ),
-              ),
-              const SizedBox(height: 10),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 250),
-                style: TextStyle(
-                  fontSize: _isHovered ? 18 : 16,
-                  fontWeight: FontWeight.w600,
-                  color: _isHovered ? color : Colors.black87,
-                  letterSpacing: _isHovered ? 0.5 : 0.2,
-                ),
-                child: Text(widget.item['title'] as String),
-              ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
