@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'attendance_screen.dart';
 import 'members_screen.dart';
-import 'programkerja_screen.dart';
-import 'keuangan_screen.dart';
-import 'placeholder_screen.dart';
 import '../models/activity.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -35,25 +32,25 @@ class HomeScreen extends StatelessWidget {
         'title': 'Program Kerja',
         'icon': Icons.work,
         'color': Colors.orange,
-        'page': const ProgramKerjaScreen(),
+        'page': null,
       },
       {
         'title': 'Keuangan',
-        'icon': Icons.attach_money,
+        'icon': Icons.account_balance_wallet,
         'color': Colors.green,
-        'page': const KeuanganScreen(),
+        'page': null,
       },
       {
         'title': 'Laporan',
-        'icon': Icons.insert_chart,
-        'color': Colors.deepPurple,
-        'page': const PlaceholderScreen(title: 'Laporan'),
+        'icon': Icons.bar_chart,
+        'color': Colors.indigo,
+        'page': null,
       },
       {
         'title': 'Pengaturan',
         'icon': Icons.settings,
         'color': Colors.grey,
-        'page': const PlaceholderScreen(title: 'Pengaturan'),
+        'page': null,
       },
     ];
 
@@ -85,8 +82,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio:
-                    constraints.maxWidth < 600 ? 1 : 1.1,
+                childAspectRatio: constraints.maxWidth < 600 ? 1 : 1.1,
               ),
               itemBuilder: (context, index) {
                 final item = menuItems[index];
@@ -109,71 +105,74 @@ class _AnimatedMenuItem extends StatefulWidget {
 }
 
 class _AnimatedMenuItemState extends State<_AnimatedMenuItem> {
-  bool _isPressed = false;
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final color = widget.item['color'] as Color;
-    final hoveredColor = color.withOpacity(0.1);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) async {
-          await Future.delayed(const Duration(milliseconds: 150));
-          setState(() => _isPressed = false);
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => widget.item['page']),
-          );
-        },
-        onTapCancel: () => setState(() => _isPressed = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          transform:
-              Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
-          decoration: BoxDecoration(
-            color: _isHovered ? hoveredColor : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: _isPressed
-                    ? color.withOpacity(0.3)
-                    : Colors.black12.withOpacity(0.1),
-                blurRadius: _isPressed ? 12 : 6,
-                offset: const Offset(2, 4),
-              ),
-            ],
-          ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        transform: Matrix4.identity()
+          ..scale(_isHovered ? 1.07 : 1.0), // Zoom halus saat hover
+        decoration: BoxDecoration(
+          color: _isHovered ? color.withOpacity(0.15) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: _isHovered
+                  ? color.withOpacity(0.4)
+                  : Colors.black12,
+              blurRadius: _isHovered ? 12 : 6,
+              offset: const Offset(2, 4),
+            ),
+          ],
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            if (widget.item['page'] != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => widget.item['page']),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      'Menu "${widget.item['title']}" belum aktif'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: _isPressed ? 60 : 70,
-                width: _isPressed ? 60 : 70,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              AnimatedScale(
+                duration: const Duration(milliseconds: 250),
+                scale: _isHovered ? 1.15 : 1.0,
+                curve: Curves.easeOutBack,
                 child: Icon(
                   widget.item['icon'] as IconData,
                   color: color,
-                  size: _isPressed ? 36 : 40,
+                  size: _isHovered ? 52 : 42,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                widget.item['title'] as String,
-                style: const TextStyle(
-                  fontSize: 16,
+              const SizedBox(height: 10),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 250),
+                style: TextStyle(
+                  fontSize: _isHovered ? 18 : 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: _isHovered ? color : Colors.black87,
+                  letterSpacing: _isHovered ? 0.5 : 0.2,
                 ),
+                child: Text(widget.item['title'] as String),
               ),
             ],
           ),
