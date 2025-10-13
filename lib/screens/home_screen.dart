@@ -8,6 +8,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Dummy data untuk contoh halaman absensi
     final dummyActivity = Activity(
       id: 1,
       title: 'Kegiatan Rutin',
@@ -15,6 +16,7 @@ class HomeScreen extends StatelessWidget {
       description: 'Absensi kegiatan rutin mingguan',
     );
 
+    // Daftar menu di dashboard
     final List<Map<String, dynamic>> menuItems = [
       {
         'title': 'Absensi',
@@ -54,6 +56,7 @@ class HomeScreen extends StatelessWidget {
       },
     ];
 
+    // Menggunakan MediaQuery untuk menentukan jumlah kolom
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount =
         screenWidth < 600 ? 2 : screenWidth < 900 ? 3 : 4;
@@ -72,6 +75,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+      // LayoutBuilder menyesuaikan grid terhadap ruang lokal
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Padding(
@@ -82,7 +86,8 @@ class HomeScreen extends StatelessWidget {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: constraints.maxWidth < 600 ? 1 : 1.1,
+                childAspectRatio:
+                    constraints.maxWidth < 600 ? 1 : 1.1,
               ),
               itemBuilder: (context, index) {
                 final item = menuItems[index];
@@ -96,6 +101,9 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+// ==============================
+// Widget Kartu Menu dengan Animasi Hover
+// ==============================
 class _AnimatedMenuItem extends StatefulWidget {
   final Map<String, dynamic> item;
   const _AnimatedMenuItem({required this.item});
@@ -116,24 +124,26 @@ class _AnimatedMenuItemState extends State<_AnimatedMenuItem> {
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
+        curve: Curves.easeOutCubic,
         transform: Matrix4.identity()
-          ..scale(_isHovered ? 1.07 : 1.0), // Zoom halus saat hover
+          ..scale(_isHovered ? 1.07 : 1.0)
+          ..translate(0, _isHovered ? -4 : 0), // efek naik sedikit
         decoration: BoxDecoration(
           color: _isHovered ? color.withOpacity(0.15) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: _isHovered
-                  ? color.withOpacity(0.4)
-                  : Colors.black12,
-              blurRadius: _isHovered ? 12 : 6,
+              color:
+                  _isHovered ? color.withOpacity(0.4) : Colors.black12,
+              blurRadius: _isHovered ? 14 : 6,
               offset: const Offset(2, 4),
             ),
           ],
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
+          splashColor: color.withOpacity(0.2),
+          highlightColor: Colors.transparent,
           onTap: () {
             if (widget.item['page'] != null) {
               Navigator.push(
