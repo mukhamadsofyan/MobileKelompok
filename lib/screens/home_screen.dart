@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'attendance_screen.dart';
 import 'members_screen.dart';
+import 'programkerja_screen.dart';
+import 'keuangan_screen.dart';
+import 'placeholder_screen.dart';
 import '../models/activity.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -26,31 +29,31 @@ class HomeScreen extends StatelessWidget {
         'title': 'Anggota',
         'icon': Icons.group,
         'color': Colors.blueAccent,
-        'page': const MembersScreen(), // aktif
+        'page': const MembersScreen(),
+      },
+      {
+        'title': 'Program Kerja',
+        'icon': Icons.work,
+        'color': Colors.orange,
+        'page': const ProgramKerjaScreen(),
+      },
+      {
+        'title': 'Keuangan',
+        'icon': Icons.attach_money,
+        'color': Colors.green,
+        'page': const KeuanganScreen(),
       },
       {
         'title': 'Kegiatan',
         'icon': Icons.event,
-        'color': Colors.orange,
-        'page': null,
-      },
-      {
-        'title': 'Laporan',
-        'icon': Icons.bar_chart,
-        'color': Colors.green,
-        'page': null,
-      },
-      {
-        'title': 'Forum',
-        'icon': Icons.chat,
         'color': Colors.purple,
-        'page': null,
+        'page': const PlaceholderScreen(title: 'Kegiatan'),
       },
       {
         'title': 'Pengaturan',
         'icon': Icons.settings,
         'color': Colors.grey,
-        'page': null,
+        'page': const PlaceholderScreen(title: 'Pengaturan'),
       },
     ];
 
@@ -117,21 +120,10 @@ class _AnimatedMenuItemState extends State<_AnimatedMenuItem> {
       onTapUp: (_) async {
         await Future.delayed(const Duration(milliseconds: 150));
         setState(() => _isPressed = false);
-
-        if (widget.item['page'] != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => widget.item['page']),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  Text('Menu "${widget.item['title']}" belum diaktifkan.'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => widget.item['page']),
+        );
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
