@@ -44,10 +44,10 @@ class HomeScreen extends StatelessWidget {
         'page': const KeuanganScreen(),
       },
       {
-        'title': 'Kegiatan',
-        'icon': Icons.event,
-        'color': Colors.purple,
-        'page': const PlaceholderScreen(title: 'Kegiatan'),
+        'title': 'Laporan',
+        'icon': Icons.insert_chart,
+        'color': Colors.deepPurple,
+        'page': const PlaceholderScreen(title: 'Laporan'),
       },
       {
         'title': 'Pengaturan',
@@ -110,67 +110,73 @@ class _AnimatedMenuItem extends StatefulWidget {
 
 class _AnimatedMenuItemState extends State<_AnimatedMenuItem> {
   bool _isPressed = false;
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final color = widget.item['color'] as Color;
+    final hoveredColor = color.withOpacity(0.1);
 
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) async {
-        await Future.delayed(const Duration(milliseconds: 150));
-        setState(() => _isPressed = false);
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => widget.item['page']),
-        );
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        transform:
-            Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: _isPressed
-                  ? color.withOpacity(0.3)
-                  : Colors.black12.withOpacity(0.1),
-              blurRadius: _isPressed ? 12 : 6,
-              offset: const Offset(2, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: _isPressed ? 60 : 70,
-              width: _isPressed ? 60 : 70,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(16),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) async {
+          await Future.delayed(const Duration(milliseconds: 150));
+          setState(() => _isPressed = false);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => widget.item['page']),
+          );
+        },
+        onTapCancel: () => setState(() => _isPressed = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          transform:
+              Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
+          decoration: BoxDecoration(
+            color: _isHovered ? hoveredColor : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: _isPressed
+                    ? color.withOpacity(0.3)
+                    : Colors.black12.withOpacity(0.1),
+                blurRadius: _isPressed ? 12 : 6,
+                offset: const Offset(2, 4),
               ),
-              child: Icon(
-                widget.item['icon'] as IconData,
-                color: color,
-                size: _isPressed ? 36 : 40,
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                height: _isPressed ? 60 : 70,
+                width: _isPressed ? 60 : 70,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  widget.item['icon'] as IconData,
+                  color: color,
+                  size: _isPressed ? 36 : 40,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              widget.item['title'] as String,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+              const SizedBox(height: 12),
+              Text(
+                widget.item['title'] as String,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
