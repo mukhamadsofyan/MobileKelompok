@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'members_screen.dart'; // halaman anggota
-import 'attendance_screen.dart'; // halaman absensi
-import '../models/activity.dart'; // untuk dummy Activity object
+import 'attendance_screen.dart';
+import 'members_screen.dart';
+import '../models/activity.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Dummy activity agar tidak error (karena AttendanceScreen butuh data Activity)
     final dummyActivity = Activity(
       id: 1,
       title: 'Kegiatan Rutin',
@@ -27,13 +26,13 @@ class HomeScreen extends StatelessWidget {
         'title': 'Anggota',
         'icon': Icons.group,
         'color': Colors.blueAccent,
-        'page': const MembersScreen(),
+        'page': const MembersScreen(), // aktif
       },
       {
         'title': 'Kegiatan',
         'icon': Icons.event,
         'color': Colors.orange,
-        'page': null, // nanti diarahkan ke ActivityScreen
+        'page': null,
       },
       {
         'title': 'Laporan',
@@ -55,6 +54,10 @@ class HomeScreen extends StatelessWidget {
       },
     ];
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount =
+        screenWidth < 600 ? 2 : screenWidth < 900 ? 3 : 4;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F8),
       appBar: AppBar(
@@ -69,77 +72,113 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: GridView.builder(
-          itemCount: menuItems.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1,
-          ),
-          itemBuilder: (context, index) {
-            final item = menuItems[index];
-            return InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                if (item['page'] != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => item['page']),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Menu "${item['title']}" belum aktif'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 6,
-                      offset: Offset(2, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      height: 70,
-                      width: 70,
-                      decoration: BoxDecoration(
-                        color: (item['color'] as Color).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        item['icon'] as IconData,
-                        color: item['color'] as Color,
-                        size: 40,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      item['title'] as String,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: GridView.builder(
+              itemCount: menuItems.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio:
+                    constraints.maxWidth < 600 ? 1 : 1.1,
               ),
-            );
-          },
+              itemBuilder: (context, index) {
+                final item = menuItems[index];
+                return _AnimatedMenuItem(item: item);
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AnimatedMenuItem extends StatefulWidget {
+  final Map<String, dynamic> item;
+  const _AnimatedMenuItem({required this.item});
+
+  @override
+  State<_AnimatedMenuItem> createState() => _AnimatedMenuItemState();
+}
+
+class _AnimatedMenuItemState extends State<_AnimatedMenuItem> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.item['color'] as Color;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) async {
+        await Future.delayed(const Duration(milliseconds: 150));
+        setState(() => _isPressed = false);
+
+        if (widget.item['page'] != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => widget.item['page']),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('Menu "${widget.item['title']}" belum diaktifkan.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        transform:
+            Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: _isPressed
+                  ? color.withOpacity(0.3)
+                  : Colors.black12.withOpacity(0.1),
+              blurRadius: _isPressed ? 12 : 6,
+              offset: const Offset(2, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: _isPressed ? 60 : 70,
+              width: _isPressed ? 60 : 70,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                widget.item['icon'] as IconData,
+                color: color,
+                size: _isPressed ? 36 : 40,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              widget.item['title'] as String,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
       ),
     );

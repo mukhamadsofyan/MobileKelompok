@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../provider/org_provider.dart';
-import '../models/member.dart';
 
 class MembersScreen extends StatefulWidget {
   const MembersScreen({super.key});
@@ -11,86 +8,96 @@ class MembersScreen extends StatefulWidget {
 }
 
 class _MembersScreenState extends State<MembersScreen> {
-  final _nameCtrl = TextEditingController();
-  final _roleCtrl = TextEditingController();
+  final List<Map<String, String>> members = [];
+
+  void _addMember() async {
+    final controllerName = TextEditingController();
+    final controllerRole = TextEditingController();
+
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tambah Anggota'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controllerName,
+              decoration: const InputDecoration(
+                labelText: 'Nama Anggota',
+              ),
+            ),
+            TextField(
+              controller: controllerRole,
+              decoration: const InputDecoration(
+                labelText: 'Jabatan / Peran',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controllerName.text.isNotEmpty &&
+                  controllerRole.text.isNotEmpty) {
+                Navigator.pop(context, {
+                  'name': controllerName.text,
+                  'role': controllerRole.text,
+                });
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      setState(() => members.add(result));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final prov = Provider.of<OrgProvider>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Anggota Organisasi')),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          for (var m in prov.members)
-            Card(
-              child: ListTile(
-                title: Text(m.name),
-                subtitle: Text(m.role),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () async {
-                    await prov.removeMember(m.id!);
-                  },
-                ),
-                onTap: () async {
-                  _nameCtrl.text = m.name;
-                  _roleCtrl.text = m.role;
-                  await showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                            title: const Text('Edit Anggota'),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Nama')),
-                                TextField(controller: _roleCtrl, decoration: const InputDecoration(labelText: 'Role')),
-                              ],
-                            ),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
-                              TextButton(
-                                  onPressed: () async {
-                                    final updated = Member(id: m.id, name: _nameCtrl.text, role: _roleCtrl.text);
-                                    await prov.updateMember(updated);
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Simpan')),
-                            ],
-                          ));
-                },
+      appBar: AppBar(
+        title: const Text('Daftar Anggota'),
+        backgroundColor: Colors.blueAccent,
+      ),
+      body: members.isEmpty
+          ? const Center(
+              child: Text(
+                'Belum ada anggota.\nTekan tombol + untuk menambah.',
+                textAlign: TextAlign.center,
               ),
             )
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.person_add),
-        onPressed: () async {
-          _nameCtrl.clear();
-          _roleCtrl.clear();
-          await showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                    title: const Text('Tambah Anggota'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Nama')),
-                        TextField(controller: _roleCtrl, decoration: const InputDecoration(labelText: 'Role')),
-                      ],
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: members.length,
+              itemBuilder: (context, i) {
+                final m = members[i];
+                return Card(
+                  elevation: 3,
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Colors.blueAccent,
+                      child: Icon(Icons.person, color: Colors.white),
                     ),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
-                      TextButton(
-                          onPressed: () async {
-                            if (_nameCtrl.text.trim().isEmpty) return;
-                            await prov.addMember(Member(name: _nameCtrl.text.trim(), role: _roleCtrl.text.trim()));
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Tambah')),
-                    ],
-                  ));
-        },
+                    title: Text(m['name'] ?? ''),
+                    subtitle: Text(m['role'] ?? ''),
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addMember,
+        backgroundColor: Colors.blueAccent,
+        child: const Icon(Icons.add),
       ),
     );
   }
