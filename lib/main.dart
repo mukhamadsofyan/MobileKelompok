@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'provider/org_provider.dart';
-import 'screens/home_screen.dart';
+import 'package:get/get.dart';
+import 'app/routes/app_pages.dart';
 
 void main() {
-  runApp(const OrgTrackApp());
+  runApp(const KelompokApp());
 }
 
-class OrgTrackApp extends StatelessWidget {
-  const OrgTrackApp({super.key});
+class KelompokApp extends StatelessWidget {
+  const KelompokApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => OrgProvider()..loadAll(),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'OrgTrack',
-        theme: ThemeData(
-          primarySwatch: Colors.indigo,
-        ),
-        home: const HomeScreen(),
+    return GetMaterialApp(
+      title: 'OrgTrack',
+      debugShowCheckedModeBanner: false,
+      initialRoute: AppPages.INITIAL,
+      getPages: AppPages.routes,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
       ),
     );
   }
