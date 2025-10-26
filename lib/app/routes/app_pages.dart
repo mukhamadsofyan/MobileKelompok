@@ -3,6 +3,7 @@ import 'package:orgtrack/app/data/models/AgendaModel.dart';
 import 'package:orgtrack/app/ui/agenda/bindings/agenda_binding.dart';
 import 'package:orgtrack/app/ui/agenda/views/agenda_view.dart';
 import 'package:orgtrack/app/ui/attendance/views/AttendanceAgendaView.dart';
+import 'package:orgtrack/app/ui/bidang/views/bidang_view.dart';
 import 'package:orgtrack/app/ui/notifikasi/bindings/notifikasi_binding.dart';
 import 'package:orgtrack/app/ui/notifikasi/views/notifikasi_view.dart';
 import 'package:orgtrack/app/ui/visimisi/bindings/visi_misi_binding.dart';
@@ -51,11 +52,11 @@ class AppPages {
       page: () => KeuanganView(),
       binding: KeuanganBinding(),
     ),
-    GetPage(
-      name: Routes.PROGRAMKERJA,
-      page: () => const ProgramKerjaView(),
-      binding: ProgramKerjaBinding(),
-    ),
+    // GetPage(
+    //   name: Routes.PROGRAMKERJA,
+    //   page: () => const ProgramKerjaView(),
+    //   binding: ProgramKerjaBinding(),
+    // ),
     GetPage(
       name: Routes.STRUKTUR,
       page: () => StrukturKabinetView(),
@@ -76,7 +77,7 @@ class AppPages {
       page: () => const AgendaView(),
       binding: AgendaBinding(),
     ),
-        GetPage(
+    GetPage(
       name: Routes.VISI_MISI,
       page: () => const VisiMisiView(),
       binding: VisiMisiBinding(),
@@ -86,5 +87,9 @@ class AppPages {
       page: () => const NotifikasiView(),
       binding: NotifikasiBinding(),
     ),
+    // app_pages.dart
+    GetPage(
+      name: Routes.Bidang, 
+      page: () => const BidangView()),
   ];
 }

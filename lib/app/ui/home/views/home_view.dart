@@ -212,7 +212,7 @@ class _HomeViewState extends State<HomeView> {
                           icon: Icons.assignment,
                           label: 'Program Kerja',
                           color: Colors.teal.shade600,
-                          onTap: () => Get.toNamed(Routes.PROGRAMKERJA),
+                          onTap: () => Get.toNamed(Routes.Bidang),
                         ),
                         _menuButton(
                           icon: Icons.event,

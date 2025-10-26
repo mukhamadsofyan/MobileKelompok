@@ -1,13 +1,10 @@
 import 'package:get/get.dart';
-import '../../../data/db/db_helper.dart';
-import '../../../data/models/program_kerja.dart';
+import 'package:orgtrack/app/data/db/db_helper.dart';
+import 'package:orgtrack/app/data/models/program_kerja.dart';
 
-
-class ProgramKerjaController extends GetxController {
-  final DBHelper _db = DBHelper();
-
+class ProgramController extends GetxController {
   var programList = <ProgramKerja>[].obs;
-  var loading = false.obs;
+  final DBHelper db = DBHelper();
 
   @override
   void onInit() {
@@ -15,22 +12,32 @@ class ProgramKerjaController extends GetxController {
     loadPrograms();
   }
 
+  // Load semua program dari database
   Future<void> loadPrograms() async {
-    loading.value = true;
-    try {
-      programList.assignAll(await _db.getProgramKerja());
-    } finally {
-      loading.value = false;
-    }
+    final data = await db.getProgramKerja();
+    programList.assignAll(data);
   }
 
-  Future<void> addProgram(ProgramKerja p) async {
-    await _db.insertProgramKerja(p);
+  // Tambah program ke database
+  Future<void> addProgram(ProgramKerja program) async {
+    await db.insertProgramKerja(program);
     await loadPrograms();
   }
 
+  // Update program di database
+  Future<void> updateProgram(ProgramKerja program) async {
+    await db.updateProgramKerja(program);
+    await loadPrograms();
+  }
+
+  // Hapus program dari database
   Future<void> deleteProgram(int id) async {
-    await _db.deleteProgramKerja(id);
+    await db.deleteProgramKerja(id);
     await loadPrograms();
+  }
+
+  // Filter berdasarkan bidang
+  List<ProgramKerja> getByBidang(int bidangId) {
+    return programList.where((p) => p.bidangId == bidangId).toList();
   }
 }

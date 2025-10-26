@@ -10,7 +10,7 @@ class DBHelper {
   static Database? _db;
 
   static const int _dbVersion = 4;
-  static const String _dbName = 'kelompok_app.db';
+  static const String _dbName = 'orgtrack.db';
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -42,12 +42,12 @@ class DBHelper {
     ''');
 
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS program_kerja (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nama TEXT NOT NULL,
+      CREATE TABLE program_kerja(
+        id INTEGER PRIMARY KEY,
+        bidangId INTEGER,
+        judul TEXT NOT NULL,
         deskripsi TEXT,
-        tanggalMulai TEXT,
-        tanggalSelesai TEXT
+        tanggal TEXT
       )
     ''');
 
@@ -156,9 +156,19 @@ class DBHelper {
   }
 
   // ================= CRUD PROGRAM KERJA =================
-  Future<List<ProgramKerja>> getProgramKerja() async {
+  Future<List<ProgramKerja>> getProgramKerja({int? bidangId}) async {
     final db = await database;
-    final rows = await db.query('program_kerja', orderBy: 'id DESC');
+    List<Map<String, dynamic>> rows;
+    if (bidangId != null) {
+      rows = await db.query(
+        'program_kerja',
+        where: 'bidangId=?',
+        whereArgs: [bidangId],
+        orderBy: 'tanggalMulai DESC',
+      );
+    } else {
+      rows = await db.query('program_kerja', orderBy: 'tanggal DESC');
+    }
     return rows.map((r) => ProgramKerja.fromMap(r)).toList();
   }
 
@@ -167,13 +177,23 @@ class DBHelper {
     return await db.insert('program_kerja', p.toMap());
   }
 
+  Future<int> updateProgramKerja(ProgramKerja p) async {
+    final db = await database;
+    return await db.update(
+      'program_kerja',
+      p.toMap(),
+      where: 'id=?',
+      whereArgs: [p.id],
+    );
+  }
+
   Future<int> deleteProgramKerja(int id) async {
     final db = await database;
     return await db.delete('program_kerja', where: 'id=?', whereArgs: [id]);
   }
 
   // ================= CRUD KEUANGAN =================
-Future<List<Keuanganmodel>> getKeuangan() async {
+  Future<List<Keuanganmodel>> getKeuangan() async {
     final db = await database;
     final rows = await db.query('keuangan', orderBy: 'date DESC');
     return rows.map((r) => Keuanganmodel.fromMap(r)).toList();
@@ -216,7 +236,8 @@ Future<List<Keuanganmodel>> getKeuangan() async {
 
   Future<int> updateStruktural(Struktural s) async {
     final db = await database;
-    return await db.update('struktural', s.toMap(), where: 'id=?', whereArgs: [s.id]);
+    return await db
+        .update('struktural', s.toMap(), where: 'id=?', whereArgs: [s.id]);
   }
 
   Future<int> deleteStruktural(int id) async {
@@ -262,11 +283,13 @@ Future<List<Keuanganmodel>> getKeuangan() async {
   // ================= CRUD ABSENSI =================
   Future<List<Map<String, dynamic>>> getAttendanceByAgenda(int agendaId) async {
     final db = await database;
-    final rows = await db.query('attendance', where: 'agenda_id=?', whereArgs: [agendaId]);
+    final rows = await db
+        .query('attendance', where: 'agenda_id=?', whereArgs: [agendaId]);
     return rows;
   }
 
-  Future<int> markAttendance(int agendaId, int strukturalId, bool present) async {
+  Future<int> markAttendance(
+      int agendaId, int strukturalId, bool present) async {
     final db = await database;
 
     final existing = await db.query(
@@ -293,6 +316,7 @@ Future<List<Keuanganmodel>> getKeuangan() async {
 
   Future<int> deleteAttendanceByAgenda(int agendaId) async {
     final db = await database;
-    return await db.delete('attendance', where: 'agenda_id=?', whereArgs: [agendaId]);
+    return await db
+        .delete('attendance', where: 'agenda_id=?', whereArgs: [agendaId]);
   }
 }

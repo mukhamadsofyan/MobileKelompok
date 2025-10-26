@@ -12,5 +12,6 @@ abstract class Routes {
   static const ATTENDANCE_AGENDA = '/attendance_agenda';
   static const VISI_MISI = '/visi_misi';
   static const NOTIFIKASI = '/notifikasi';
+  static const Bidang = '/bidang';
 }
 

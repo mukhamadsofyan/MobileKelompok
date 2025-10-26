@@ -1,33 +1,33 @@
 class ProgramKerja {
-  final int? id;
-  final String nama;
-  final String deskripsi;
-  final DateTime tanggalMulai;
-  final DateTime tanggalSelesai;
+  int id;
+  int bidangId; // bisa 0 atau null kalau ini global
+  String judul;
+  String deskripsi;
+  DateTime tanggal; // satu tanggal untuk program
 
   ProgramKerja({
-    this.id,
-    required this.nama,
+    required this.id,
+    required this.bidangId,
+    required this.judul,
     required this.deskripsi,
-    required this.tanggalMulai,
-    required this.tanggalSelesai,
+    required this.tanggal,
   });
 
   factory ProgramKerja.fromMap(Map<String, dynamic> map) {
     return ProgramKerja(
       id: map['id'],
-      nama: map['nama'],
+      bidangId: map['bidangId'],
+      judul: map['judul'],
       deskripsi: map['deskripsi'],
-      tanggalMulai: DateTime.parse(map['tanggalMulai']),
-      tanggalSelesai: DateTime.parse(map['tanggalSelesai']),
+      tanggal: DateTime.parse(map['tanggal']),
     );
   }
 
   Map<String, dynamic> toMap() => {
         'id': id,
-        'nama': nama,
+        'bidangId': bidangId,
+        'judul': judul,
         'deskripsi': deskripsi,
-        'tanggalMulai': tanggalMulai.toIso8601String(),
-        'tanggalSelesai': tanggalSelesai.toIso8601String(),
+        'tanggal': tanggal.toIso8601String(),
       };
 }

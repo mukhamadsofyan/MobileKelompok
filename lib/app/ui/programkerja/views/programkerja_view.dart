@@ -1,28 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../app/controllers/programkerja_controller.dart';
-import '../../../../app/data/models/program_kerja.dart';
+import 'package:orgtrack/app/data/models/program_kerja.dart';
+import 'package:orgtrack/app/ui/programkerja/controllers/programkerja_controller.dart';
 
 class ProgramKerjaView extends StatefulWidget {
-  const ProgramKerjaView({super.key});
+  final int bidangId;
+  final String bidangName;
+
+  const ProgramKerjaView({
+    super.key,
+    required this.bidangId,
+    required this.bidangName,
+  });
 
   @override
   State<ProgramKerjaView> createState() => _ProgramKerjaViewState();
 }
 
-class _ProgramKerjaViewState extends State<ProgramKerjaView>
-    with SingleTickerProviderStateMixin {
+class _ProgramKerjaViewState extends State<ProgramKerjaView> {
   final searchCtrl = TextEditingController();
-  final controller = Get.find<ProgramKerjaController>();
+  final controller = Get.find<ProgramController>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4FAF8),
       appBar: AppBar(
-        title: const Text(
-          'Program Kerja Organisasi',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          'Program Kerja ${widget.bidangName}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.teal.shade600,
@@ -36,13 +42,10 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView>
         onPressed: () => _showAddEditSheet(context, controller),
       ),
       body: Obx(() {
-        if (controller.loading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         final filteredList = controller.programList
+            .where((p) => p.bidangId == widget.bidangId)
             .where((p) =>
-                p.nama.toLowerCase().contains(searchCtrl.text.toLowerCase()))
+                p.judul.toLowerCase().contains(searchCtrl.text.toLowerCase()))
             .toList();
 
         return Padding(
@@ -100,8 +103,10 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView>
                             index: i,
                             child: _ProgramCardItem(
                               program: p,
-                              onEdit: () => _showAddEditSheet(context, controller, program: p),
-                              onDelete: () => _confirmDelete(context, controller, p),
+                              onEdit: () => _showAddEditSheet(
+                                  context, controller, program: p),
+                              onDelete: () =>
+                                  _confirmDelete(context, controller, p),
                             ),
                           );
                         },
@@ -115,10 +120,11 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView>
   }
 
   // 🧩 Bottom Sheet Add/Edit
-  void _showAddEditSheet(BuildContext context, ProgramKerjaController controller,
+  void _showAddEditSheet(BuildContext context, ProgramController controller,
       {ProgramKerja? program}) {
-    final namaCtrl = TextEditingController(text: program?.nama ?? '');
+    final judulCtrl = TextEditingController(text: program?.judul ?? '');
     final deskCtrl = TextEditingController(text: program?.deskripsi ?? '');
+    DateTime selectedDate = program?.tanggal ?? DateTime.now();
 
     showModalBottomSheet(
       context: context,
@@ -151,7 +157,9 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  program == null ? 'Tambah Program Kerja' : 'Edit Program Kerja',
+                  program == null
+                      ? 'Tambah Program Kerja'
+                      : 'Edit Program Kerja',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -160,9 +168,9 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView>
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: namaCtrl,
+                  controller: judulCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Nama Program',
+                    labelText: 'Judul Program',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -179,12 +187,32 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView>
                     ),
                   ),
                 ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Text(
+                        "Tanggal: ${selectedDate.toLocal().toIso8601String().split('T')[0]}"),
+                    const Spacer(),
+                    TextButton(
+                      child: const Text("Pilih"),
+                      onPressed: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (date != null) setState(() => selectedDate = date);
+                      },
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      if (namaCtrl.text.isEmpty || deskCtrl.text.isEmpty) {
+                      if (judulCtrl.text.isEmpty || deskCtrl.text.isEmpty) {
                         Get.snackbar(
                           "Input tidak lengkap",
                           "Mohon isi semua kolom.",
@@ -195,11 +223,11 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView>
                       }
 
                       final data = ProgramKerja(
-                        id: program?.id,
-                        nama: namaCtrl.text,
+                        id: program?.id ?? DateTime.now().millisecondsSinceEpoch,
+                        bidangId: widget.bidangId,
+                        judul: judulCtrl.text,
                         deskripsi: deskCtrl.text,
-                        tanggalMulai: program?.tanggalMulai ?? DateTime.now(),
-                        tanggalSelesai: program?.tanggalSelesai ?? DateTime.now(),
+                        tanggal: selectedDate,
                       );
 
                       if (program == null) {
@@ -243,26 +271,23 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView>
     );
   }
 
-  // 🗑️ Konfirmasi Hapus dengan Snackbar
-  void _confirmDelete(BuildContext context, ProgramKerjaController controller,
-      ProgramKerja program) {
+  // 🗑️ Konfirmasi Hapus
+  void _confirmDelete(
+      BuildContext context, ProgramController controller, ProgramKerja program) {
     Get.dialog(
       AlertDialog(
         title: const Text("Hapus Program"),
-        content: Text("Yakin ingin menghapus '${program.nama}'?"),
+        content: Text("Yakin ingin menghapus '${program.judul}'?"),
         actions: [
           TextButton(onPressed: Get.back, child: const Text("Batal")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () async {
-              await controller.deleteProgram(program.id!);
-              Get.back(); // Tutup dialog
-              await Future.delayed(const Duration(milliseconds: 200));
+              await controller.deleteProgram(program.id);
+              Get.back();
               Get.snackbar(
                 "Berhasil",
-                "Program '${program.nama}' telah dihapus",
+                "Program '${program.judul}' telah dihapus",
                 backgroundColor: Colors.red.shade100,
                 colorText: Colors.black87,
               );
@@ -275,7 +300,7 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView>
   }
 }
 
-// 🎞️ Animasi Muncul (Fade + Slide)
+// 🎞️ Animasi muncul
 class _AnimatedProgramCard extends StatelessWidget {
   final Widget child;
   final int index;
@@ -301,7 +326,7 @@ class _AnimatedProgramCard extends StatelessWidget {
 }
 
 // 💠 Kartu Program
-class _ProgramCardItem extends StatefulWidget {
+class _ProgramCardItem extends StatelessWidget {
   final ProgramKerja program;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -313,93 +338,58 @@ class _ProgramCardItem extends StatefulWidget {
   });
 
   @override
-  State<_ProgramCardItem> createState() => _ProgramCardItemState();
-}
-
-class _ProgramCardItemState extends State<_ProgramCardItem> {
-  double scale = 1.0;
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 100),
-      scale: scale,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => scale = 0.97),
-        onTapUp: (_) => setState(() => scale = 1.0),
-        onTapCancel: () => setState(() => scale = 1.0),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.teal.withOpacity(0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            leading: CircleAvatar(
-              radius: 22,
-              backgroundColor: Colors.teal.withOpacity(0.1),
-              child: const Icon(Icons.event, color: Colors.teal),
-            ),
-            title: Text(
-              widget.program.nama,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                widget.program.deskripsi,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                  height: 1.4,
-                ),
-              ),
-            ),
-            trailing: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded),
-              onSelected: (value) {
-                if (value == 'edit') {
-                  widget.onEdit();
-                } else if (value == 'delete') {
-                  widget.onDelete();
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.teal.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 3)),
+        ],
+      ),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        leading: CircleAvatar(
+            radius: 22,
+            backgroundColor: Colors.teal.withOpacity(0.1),
+            child: const Icon(Icons.event, color: Colors.teal)),
+        title: Text(program.judul,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(program.deskripsi,
+              style: TextStyle(
+                  fontSize: 14, color: Colors.grey.shade700, height: 1.4)),
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert_rounded),
+          onSelected: (value) {
+            if (value == 'edit') onEdit();
+            else if (value == 'delete') onDelete();
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+                value: 'edit',
+                child: Row(
                     children: [
                       Icon(Icons.edit, color: Colors.teal),
                       SizedBox(width: 8),
-                      Text("Edit"),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
+                      Text("Edit")
+                    ])),
+            const PopupMenuItem(
+                value: 'delete',
+                child: Row(
                     children: [
                       Icon(Icons.delete, color: Colors.red),
                       SizedBox(width: 8),
-                      Text("Hapus"),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+                      Text("Hapus")
+                    ])),
+          ],
         ),
       ),
     );
