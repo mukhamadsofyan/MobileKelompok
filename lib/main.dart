@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:orgtrack/app/ui/agenda/controllers/agenda_controller.dart';
 import 'app/routes/app_pages.dart';
 
 void main() {
+  Get.put(AgendaController());
   runApp(const KelompokApp());
 }
 

@@ -21,7 +21,8 @@ class StrukturalController extends GetxController {
       final data = await _db.getStruktural();
       list.assignAll(data);
     } catch (e) {
-      Get.snackbar('Error', 'Gagal memuat data struktural: $e');
+      Get.snackbar('Error', 'Gagal memuat data struktural: $e',
+          snackPosition: SnackPosition.TOP);
     } finally {
       loading.value = false;
     }
@@ -32,9 +33,10 @@ class StrukturalController extends GetxController {
     try {
       await _db.insertStruktural(Struktural(name: name, role: role));
       await loadAll(); // Auto refresh
-      Get.snackbar('Berhasil', 'Struktural baru berhasil ditambahkan');
+      // Snackbar DIHAPUS supaya tidak dobel
     } catch (e) {
-      Get.snackbar('Error', 'Gagal menambah data: $e');
+      Get.snackbar('Error', 'Gagal menambah data: $e',
+          snackPosition: SnackPosition.TOP);
     }
   }
 
@@ -43,9 +45,10 @@ class StrukturalController extends GetxController {
     try {
       await _db.updateStruktural(s);
       await loadAll(); // Auto refresh
-      Get.snackbar('Berhasil', 'Data berhasil diperbarui');
+      // Snackbar DIHAPUS supaya tidak dobel
     } catch (e) {
-      Get.snackbar('Error', 'Gagal memperbarui data: $e');
+      Get.snackbar('Error', 'Gagal memperbarui data: $e',
+          snackPosition: SnackPosition.TOP);
     }
   }
 
@@ -54,9 +57,10 @@ class StrukturalController extends GetxController {
     try {
       await _db.deleteStruktural(id);
       await loadAll(); // Auto refresh
-      Get.snackbar('Berhasil', 'Data berhasil dihapus');
+      // Snackbar DIHAPUS supaya tidak dobel
     } catch (e) {
-      Get.snackbar('Error', 'Gagal menghapus data: $e');
+      Get.snackbar('Error', 'Gagal menghapus data: $e',
+          snackPosition: SnackPosition.TOP);
     }
   }
 

@@ -25,6 +25,9 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.1.3
   dio: ^5.9.0
+  iconsax: ^0.0.8
+  http: ^1.5.0
+
 
 dev_dependencies:
   flutter_test:
@@ -37,3 +40,5 @@ flutter:
     - assets/images/arunika.jpg
     - assets/images/hmif.jpg
     - assets/images/hmifnobg.png
+    - assets/images/kegiatan1.jpg
+    - assets/images/bph.jpg

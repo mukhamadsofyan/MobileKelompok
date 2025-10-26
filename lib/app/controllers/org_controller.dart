@@ -1,51 +1,32 @@
 import 'package:get/get.dart';
-import '../data/db/db_helper.dart';
-import '../data/models/activity.dart';
-import '../data/models/AgendaModel.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:orgtrack/app/data/models/bidang_model.dart';
 
 class OrgController extends GetxController {
-  final DBHelper _db = DBHelper();
-
-  var activities = <Activity>[].obs;
-  var agendaList = <AgendaOrganisasi>[].obs; // daftar agenda
-  var loading = false.obs;
+  var bidangList = <BidangMo>[].obs;
+  var loadingBidang = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    loadAll();       // load activities
-    loadAgenda();    // load agenda
+    fetchBidang();
   }
 
-  // Load semua activities
-  Future<void> loadAll() async {
-    loading.value = true;
+  Future<void> fetchBidang() async {
+    loadingBidang.value = true;
     try {
-      activities.assignAll(await _db.getActivities());
+      final response = await http.get(Uri.parse('https://api.example.com/bidang'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        bidangList.assignAll(data.map((e) => BidangMo.fromMap(e)).toList());
+      } else {
+        Get.snackbar('Error', 'Gagal mengambil data bidang');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Terjadi kesalahan: $e');
     } finally {
-      loading.value = false;
+      loadingBidang.value = false;
     }
-  }
-
-  // Load semua agenda
-  Future<void> loadAgenda() async {
-    loading.value = true; // optional: pisahkan loadingAgenda
-    try {
-      final list = await _db.getAgendaOrganisasi();
-      agendaList.assignAll(list);
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  // Tambah activity
-  Future<void> addActivity(Activity a) async {
-    await _db.insertActivity(a);
-    await loadAll();
-  }
-
-  // Mark attendance → gunakan agendaId, bukan activityId
-  Future<void> markAttendance(int agendaId, int strukturalId, bool present) async {
-    await _db.markAttendance(agendaId, strukturalId, present);
   }
 }

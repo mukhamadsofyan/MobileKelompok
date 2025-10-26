@@ -1,12 +1,14 @@
 import 'package:get/get.dart';
-import 'package:orgtrack/app/ui/programkerja/controllers/programkerja_controller.dart';
+import '../controllers/programkerja_controller.dart';
+import '../controllers/programkerja_dio.dart';
+import '../controllers/program_kerja_mode.dart';
 
 class ProgramKerjaBinding extends Bindings {
   @override
   void dependencies() {
-    // Pastikan hanya di-initialize sekali
-    if (!Get.isRegistered<ProgramController>()) {
-      Get.put<ProgramController>(ProgramController());
-    }
+    // Jika controller belum diinisialisasi, akan dipasang
+    Get.lazyPut<ProgramControllerHttp>(() => ProgramControllerHttp());
+    Get.lazyPut<ProgramControllerDio>(() => ProgramControllerDio());
+    Get.lazyPut<ModeController>(() => ModeController());
   }
 }

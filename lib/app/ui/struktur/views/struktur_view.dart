@@ -14,13 +14,28 @@ class StrukturKabinetView extends StatefulWidget {
 }
 
 class _StrukturKabinetViewState extends State<StrukturKabinetView> {
-  final c = Get.find<StrukturalController>();
+  late StrukturalController c;
+
+  @override
+  void initState() {
+    super.initState();
+    // pastikan controller sudah tersedia
+    if (!Get.isRegistered<StrukturalController>()) {
+      c = Get.put(StrukturalController());
+    } else {
+      c = Get.find<StrukturalController>();
+    }
+    c.loadAll();
+  }
+
   String query = '';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F6),
+
+      // ===== HEADER APPBAR =====
       appBar: AppBar(
         title: Text(
           'Struktur Kabinet',
@@ -39,14 +54,14 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
             icon: const Icon(Icons.filter_list_rounded, color: Colors.white),
             onSelected: (value) {
               if (value == 'jabatan') {
-                c.list.sort((a, b) =>
-                    _jabatanLevel(b.role).compareTo(_jabatanLevel(a.role)));
+                c.list.sort(
+                    (a, b) => _jabatanLevel(b.role).compareTo(_jabatanLevel(a.role)));
               } else if (value == 'terbaru') {
                 c.list.sort((a, b) => b.id!.compareTo(a.id!));
               } else if (value == 'terlama') {
                 c.list.sort((a, b) => a.id!.compareTo(b.id!));
               }
-              setState(() {}); // supaya tampilan langsung update
+              setState(() {});
             },
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'jabatan', child: Text('Urutkan Jabatan Tertinggi')),
@@ -57,19 +72,26 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
         ],
       ),
 
+      // ===== FLOATING ACTION BUTTON =====
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showDialog(context, c),
+        onPressed: () {
+          Future.delayed(const Duration(milliseconds: 50), () {
+            _showDialog(context, c);
+          });
+        },
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Tambah'),
         backgroundColor: Colors.green.shade700,
       ),
 
+      // ===== BODY =====
       body: RefreshIndicator(
         onRefresh: () async {
-          await c.loadAll(); // auto refresh manual (pull down)
+          await c.loadAll();
         },
         child: Column(
           children: [
+            // ===== SEARCH BAR =====
             Padding(
               padding: const EdgeInsets.all(14),
               child: TextField(
@@ -92,6 +114,7 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
               ),
             ),
 
+            // ===== LIST ANGGOTA =====
             Expanded(
               child: Obx(() {
                 if (c.loading.value) {
@@ -171,7 +194,10 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                                   ],
                                   onSelected: (value) async {
                                     if (value == 'edit') {
-                                      _showDialog(context, c, s);
+                                      Future.delayed(const Duration(milliseconds: 100),
+                                          () {
+                                        _showDialog(context, c, s);
+                                      });
                                     } else if (value == 'hapus') {
                                       _confirmDelete(context, c, s.id!);
                                     }
@@ -236,7 +262,7 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
     );
   }
 
-  // === Full Screen Detail View ===
+  // === DETAIL FULL SCREEN ===
   void _showDetailFull(Struktural s) {
     final qrData = "ANGGOTA|${s.id}|${s.name}|${s.role}";
 
@@ -337,15 +363,6 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  Text(
-                    'Scan QR ini untuk validasi keanggotaan atau kehadiran.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -353,6 +370,7 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
         ));
   }
 
+  // === LEVEL JABATAN ===
   int _jabatanLevel(String role) {
     const levels = {
       'Ketua': 5,
@@ -364,125 +382,199 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
     return levels[role] ?? 0;
   }
 
-  void _showDialog(BuildContext context, StrukturalController c, [Struktural? s]) {
-    final nameController = TextEditingController(text: s?.name ?? '');
-    String selectedRole = s?.role ?? 'Anggota';
-    final roles = ['Ketua', 'Wakil Ketua', 'Sekretaris', 'Bendahara', 'Anggota'];
+  // === DIALOG TAMBAH / EDIT ===
+// === DIALOG TAMBAH / EDIT ===
+void _showDialog(BuildContext context, StrukturalController c, [Struktural? s]) {
+  final nameController = TextEditingController(text: s?.name ?? '');
+  String selectedRole = s?.role ?? 'Anggota';
+  final roles = ['Ketua', 'Wakil Ketua', 'Sekretaris', 'Bendahara', 'Anggota'];
 
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        insetPadding: const EdgeInsets.all(20),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                s == null ? 'Tambah Anggota' : 'Edit Anggota',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.green.shade700,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Nama',
-                  prefixIcon: const Icon(Icons.person_outline),
-                  border:
-                      OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedRole,
-                decoration: InputDecoration(
-                  labelText: 'Jabatan',
-                  prefixIcon: const Icon(Icons.badge_outlined),
-                  border:
-                      OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                items: roles
-                    .map((role) => DropdownMenuItem(
-                          value: role,
-                          child: Text(role),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) selectedRole = value;
-                },
-              ),
-              const SizedBox(height: 20),
-              Row(
+  bool isSaving = false;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            insetPadding: const EdgeInsets.all(20),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Get.back(),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.grey.shade400),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Batal'),
+                  Text(
+                    s == null ? 'Tambah Anggota' : 'Edit Anggota',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.green.shade700,
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nama',
+                      prefixIcon: const Icon(Icons.person_outline),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      onPressed: () async {
-                        final name = nameController.text.trim();
-                        if (name.isEmpty) return;
-                        if (s == null) {
-                          await c.addStruktural(name, selectedRole);
-                        } else {
-                          await c.updateStruktural(
-                            Struktural(id: s.id, name: name, role: selectedRole),
-                          );
-                        }
-                        await c.loadAll(); // 🔄 AUTO REFRESH setelah simpan
-                        Get.back();
-                      },
-                      child:
-                          const Text('Simpan', style: TextStyle(color: Colors.white)),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: selectedRole,
+                    decoration: InputDecoration(
+                      labelText: 'Jabatan',
+                      prefixIcon: const Icon(Icons.badge_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    items: roles
+                        .map((role) => DropdownMenuItem(value: role, child: Text(role)))
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) selectedRole = value;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  if (isSaving)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: CircularProgressIndicator(color: Colors.green),
+                    ),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey.shade400),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Batal'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade700,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: isSaving
+                              ? null
+                              : () async {
+                                  final name = nameController.text.trim();
+                                  if (name.isEmpty) {
+                                    Get.snackbar(
+                                      'Perhatian',
+                                      'Nama tidak boleh kosong',
+                                      backgroundColor: Colors.orange.shade100,
+                                      colorText: Colors.orange.shade900,
+                                      snackPosition: SnackPosition.TOP, // ✅ atas
+                                    );
+                                    return;
+                                  }
+
+                                  setState(() => isSaving = true);
+
+                                  try {
+                                    if (s == null) {
+                                      await c.addStruktural(name, selectedRole);
+                                      Get.snackbar(
+                                        'Berhasil',
+                                        'Anggota baru berhasil ditambahkan!',
+                                        backgroundColor: Colors.green.shade100,
+                                        colorText: Colors.green.shade900,
+                                        snackPosition: SnackPosition.TOP, // ✅ atas
+                                      );
+                                    } else {
+                                      await c.updateStruktural(Struktural(
+                                          id: s.id, name: name, role: selectedRole));
+                                      Get.snackbar(
+                                        'Berhasil',
+                                        'Data anggota berhasil diperbarui!',
+                                        backgroundColor: Colors.green.shade100,
+                                        colorText: Colors.green.shade900,
+                                        snackPosition: SnackPosition.TOP, // ✅ atas
+                                      );
+                                    }
+
+                                    await c.loadAll();
+                                    Navigator.pop(dialogContext); // auto close
+                                  } catch (e) {
+                                    setState(() => isSaving = false);
+                                    Get.snackbar(
+                                      'Gagal',
+                                      'Terjadi kesalahan: $e',
+                                      backgroundColor: Colors.red.shade100,
+                                      colorText: Colors.red.shade900,
+                                      snackPosition: SnackPosition.TOP,
+                                    );
+                                  }
+                                },
+                          child: const Text(
+                            'Simpan',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
-  void _confirmDelete(BuildContext context, StrukturalController c, int id) {
-    Get.defaultDialog(
-      title: 'Hapus Anggota',
-      middleText: 'Apakah Anda yakin ingin menghapus anggota ini?',
-      textCancel: 'Batal',
-      textConfirm: 'Hapus',
-      confirmTextColor: Colors.white,
-      buttonColor: Colors.red.shade400,
-      onConfirm: () async {
+// === KONFIRMASI HAPUS AUTO-CLOSE + NOTIF ATAS SAJA ===
+void _confirmDelete(BuildContext context, StrukturalController c, int id) {
+  Get.defaultDialog(
+    title: 'Hapus Anggota',
+    middleText: 'Apakah Anda yakin ingin menghapus anggota ini?',
+    textCancel: 'Batal',
+    textConfirm: 'Hapus',
+    confirmTextColor: Colors.white,
+    buttonColor: Colors.red.shade400,
+    onConfirm: () async {
+      try {
+        Get.back(); // tutup dialog konfirmasi
         await c.deleteStrukturalById(id);
-        await c.loadAll(); // 🔄 AUTO REFRESH setelah hapus
-        Get.back();
+        await c.loadAll();
+
+        // Snackbar atas saja
         Get.snackbar(
           'Terhapus',
-          'Anggota berhasil dihapus!',
+          'Data anggota berhasil dihapus!',
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade900,
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP, // ✅ atas
         );
-      },
-    );
-  }
+      } catch (e) {
+        Get.snackbar(
+          'Gagal',
+          'Terjadi kesalahan saat menghapus: $e',
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
+          snackPosition: SnackPosition.TOP,
+        );
+      }
+    },
+  );
+}
+
+
 }
