@@ -442,7 +442,7 @@ class _HomeViewState extends State<HomeView>
         _showActivityDialog(
           imagePath,
           title,
-          "Deskripsi kegiatan $title — ubah sesuai kebutuhanmu.",
+          "Deskripsi kegiatan $title — Ubah Sesuai Kebutuhan Nantinya.",
         );
       },
       child: Container(
