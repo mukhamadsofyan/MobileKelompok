@@ -20,12 +20,22 @@ class AgendaOrganisasi {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  // INSERT : tanpa ID (Supabase auto increment)
+  Map<String, dynamic> toInsertMap() {
     return {
-      'id': id,
+      'title': title,
+      'description': description,
+      'date': date.toIso8601String(),  // timestamp di Supabase cocok dengan ISO
+    };
+  }
+
+  // UPDATE : juga tanpa ID (ID dikirim via .eq)
+  Map<String, dynamic> toUpdateMap() {
+    return {
       'title': title,
       'description': description,
       'date': date.toIso8601String(),
     };
   }
 }
+  

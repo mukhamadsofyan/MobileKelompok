@@ -1,12 +1,12 @@
 class ProgramKerja {
-  int id;
-  int bidangId; // bisa 0 atau null kalau ini global
+  int? id;
+  int bidangId;
   String judul;
   String deskripsi;
-  DateTime tanggal; // satu tanggal untuk program
+  DateTime tanggal;
 
   ProgramKerja({
-    required this.id,
+    this.id,
     required this.bidangId,
     required this.judul,
     required this.deskripsi,
@@ -16,15 +16,15 @@ class ProgramKerja {
   factory ProgramKerja.fromMap(Map<String, dynamic> map) {
     return ProgramKerja(
       id: map['id'],
-      bidangId: map['bidangId'],
-      judul: map['judul'],
-      deskripsi: map['deskripsi'],
-      tanggal: DateTime.parse(map['tanggal']),
+      bidangId: map['bidangId'] ?? 0,
+      judul: map['judul'] ?? '',
+      deskripsi: map['deskripsi'] ?? '',
+      tanggal: DateTime.tryParse(map['tanggal'] ?? '') ?? DateTime.now(),
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'id': id,
+        if (id != null) 'id': id,
         'bidangId': bidangId,
         'judul': judul,
         'deskripsi': deskripsi,

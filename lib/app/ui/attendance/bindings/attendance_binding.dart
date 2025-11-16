@@ -1,13 +1,9 @@
 import 'package:get/get.dart';
-import '../controllers/attendance_controller.dart';
-import '../../../data/models/AgendaModel.dart';
+import 'package:orgtrack/app/ui/attendance/controllers/attendance_agenda.dart';
 
-class AttendanceBinding extends Bindings {
-  final AgendaOrganisasi agenda;
-  AttendanceBinding({required this.agenda});
-
+class AttendanceAgendaBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => AttendanceController(agenda: agenda));
+    Get.lazyPut<AttendanceAgendaController>(() => AttendanceAgendaController());
   }
 }

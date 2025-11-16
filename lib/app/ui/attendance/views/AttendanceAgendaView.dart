@@ -6,8 +6,8 @@ import '../../../data/models/AgendaModel.dart';
 import '../../../routes/app_pages.dart';
 
 class AttendanceAgendaView extends StatelessWidget {
-  final AttendanceAgendaController controller =
-      Get.put(AttendanceAgendaController());
+  final AttendanceAgendaController agendaC =
+      Get.find<AttendanceAgendaController>();
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +53,15 @@ class AttendanceAgendaView extends StatelessWidget {
               ),
             ),
           ),
+
+          // ================= LIST =================
           SliverToBoxAdapter(
             child: Obx(() {
-              if (controller.agendaList.isEmpty) {
+              // DEBUG optional
+              print("DEBUG agendas length: ${agendaC.agendaList.length}");
+              print("DEBUG loading: ${agendaC.loading.value}");
+
+              if (agendaC.loading.value) {
                 return const Padding(
                   padding: EdgeInsets.only(top: 100),
                   child: Center(
@@ -64,31 +70,38 @@ class AttendanceAgendaView extends StatelessWidget {
                 );
               }
 
-              return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: ListView.builder(
-                  key: ValueKey(controller.agendaList.length),
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
-                  itemCount: controller.agendaList.length,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemBuilder: (context, index) {
-                    final agenda = controller.agendaList[index];
-                    return _AnimatedAgendaCard(
-                      index: index,
-                      agenda: agenda,
-                    );
-                  },
-                ),
+              if (agendaC.agendaList.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.only(top: 100),
+                  child: Center(
+                    child: Text(
+                      "Belum ada agenda",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+                itemCount: agendaC.agendaList.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final agenda = agendaC.agendaList[index];
+                  return _AnimatedAgendaCard(
+                    index: index,
+                    agenda: agenda,
+                  );
+                },
               );
             }),
           ),
         ],
       ),
+
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => controller.loadAgenda(),
+        onPressed: () => agendaC.loadAgenda(),
         backgroundColor: Colors.teal.shade700,
         elevation: 8,
         icon: const Icon(Icons.refresh_rounded, color: Colors.white),
@@ -97,6 +110,7 @@ class AttendanceAgendaView extends StatelessWidget {
           style: TextStyle(color: Colors.white),
         ),
       ),
+
       bottomNavigationBar: const _FooterHint(),
     );
   }
@@ -105,6 +119,7 @@ class AttendanceAgendaView extends StatelessWidget {
 class _AnimatedAgendaCard extends StatefulWidget {
   final int index;
   final AgendaOrganisasi agenda;
+
   const _AnimatedAgendaCard({
     required this.index,
     required this.agenda,
@@ -147,6 +162,7 @@ class _AnimatedAgendaCardState extends State<_AnimatedAgendaCard>
   @override
   Widget build(BuildContext context) {
     final agenda = widget.agenda;
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: ScaleTransition(
@@ -185,13 +201,6 @@ class _AnimatedAgendaCardState extends State<_AnimatedAgendaCard>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.teal.withOpacity(0.4),
-                        blurRadius: 10,
-                        offset: const Offset(2, 4),
-                      )
-                    ],
                   ),
                   child: Center(
                     child: Text(
@@ -261,14 +270,6 @@ class _FooterHint extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.teal.withOpacity(0.12),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,

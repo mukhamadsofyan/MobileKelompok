@@ -27,6 +27,9 @@ dependencies:
   dio: ^5.9.0
   iconsax: ^0.0.8
   http: ^1.5.0
+  supabase_flutter: ^2.0.0
+  flutter_dotenv: ^5.1.0
+  lottie: ^2.7.0
 
 
 dev_dependencies:
@@ -36,9 +39,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
-    - assets/images/arunika.jpg
     - assets/images/hmif.jpg
     - assets/images/hmifnobg.png
     - assets/images/kegiatan1.jpg
     - assets/images/bph.jpg
+    - .env

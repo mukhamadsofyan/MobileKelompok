@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import '../../../controllers/org_controller_backup.dart';
+import 'package:orgtrack/app/controllers/org_controller.dart';
 
 class OrgBinding extends Bindings {
   @override

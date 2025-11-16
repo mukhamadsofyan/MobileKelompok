@@ -13,5 +13,10 @@ abstract class Routes {
   static const VISI_MISI = '/visi_misi';
   static const NOTIFIKASI = '/notifikasi';
   static const Bidang = '/bidang';
+  static const TEST_SUPABASE = '/test-supabase';
+  static const LOGIN = '/login';
+  static const REGISTER = '/register';
+  static const WELCOME = '/welcome';
+  static const PROFILE = '/profile';
 }
 

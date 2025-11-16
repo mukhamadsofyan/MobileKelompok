@@ -25,60 +25,145 @@ class _BidangViewState extends State<BidangView> {
     modeC = Get.put(ModeControllerBidang());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (modeC.mode.value == FetchMode.http) httpC.fetchBidang();
-      else dioC.fetchBidang();
+      if (modeC.mode.value == FetchMode.http)
+        httpC.fetchBidang();
+      else
+        dioC.fetchBidang();
     });
 
     ever<FetchMode>(modeC.mode, (m) {
-      if (m == FetchMode.http) httpC.fetchBidang();
-      else dioC.fetchBidang();
+      if (m == FetchMode.http)
+        httpC.fetchBidang();
+      else
+        dioC.fetchBidang();
     });
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bidang'),
-        actions: [
-          Obx(() => DropdownButton<FetchMode>(
-                value: modeC.mode.value,
-                underline: const SizedBox(),
-                dropdownColor: Colors.white,
-                items: const [
-                  DropdownMenuItem(value: FetchMode.http, child: Text("HTTP")),
-                  DropdownMenuItem(value: FetchMode.dio, child: Text("DIO")),
-                ],
-                onChanged: (val) => val != null ? modeC.mode.value = val : null,
-              )),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF4F7F6),
       body: Obx(() {
         final isHttp = modeC.mode.value == FetchMode.http;
         final list = isHttp ? httpC.bidangList : dioC.bidangList;
         final loading = isHttp ? httpC.loadingBidang : dioC.loadingBidang;
-        final lastMs = isHttp ? httpC.lastFetchMs : dioC.lastFetchMs;
-        final avgMs = isHttp ? httpC.averageFetchMs : dioC.averageFetchMs;
-        final records = isHttp ? httpC.records : dioC.records;
 
-        if (loading.value) return const Center(child: CircularProgressIndicator());
-        if (list.isEmpty) return const Center(child: Text("Belum ada bidang tersedia"));
+        if (loading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
         return Column(
           children: [
+            // ================== HEADER GRADIENT ==================
             Container(
-              width: double.infinity,
-              color: Colors.grey.shade100,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.only(
+                  top: 45, left: 20, right: 20, bottom: 12),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF009688),
+                    Color(0xFF4DB6AC),
+                    Color(0xFF80CBC4),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Mode: ${isHttp ? 'HTTP' : 'DIO'}'),
-                  Text('Last fetch: $lastMs ms'),
-                  Text('Average fetch: $avgMs ms'),
+                  // ← Back + Title + Filter button (sejajar seperti Struktur)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Get.back(),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+
+                      const Text(
+                        "Bidang",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+
+                      // Dropdown Mode (HTTP / DIO)
+                      Obx(() => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.25),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: DropdownButton<FetchMode>(
+                              value: modeC.mode.value,
+                              underline: const SizedBox(),
+                              dropdownColor: Colors.white,
+                              icon: const Icon(Icons.expand_more,
+                                  color: Colors.white),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: FetchMode.http,
+                                  child: Text("HTTP"),
+                                ),
+                                DropdownMenuItem(
+                                  value: FetchMode.dio,
+                                  child: Text("DIO"),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) modeC.mode.value = val;
+                              },
+                            ),
+                          )),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // ================= SEARCH BAR =================
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: "Cari bidang...",
+                        prefixIcon:
+                            const Icon(Icons.search, color: Colors.teal),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
+
+            const SizedBox(height: 10),
+
+            // ================= LIST BIDANG =================
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -87,9 +172,19 @@ class _BidangViewState extends State<BidangView> {
                   final b = list[i];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
                     child: ListTile(
-                      title: Text(b.nama),
-                      trailing: const Icon(Icons.arrow_forward_ios),
+                      title: Text(
+                        b.nama,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
                         Get.to(() => ProgramKerjaView(
                               bidangId: b.id,
@@ -99,40 +194,6 @@ class _BidangViewState extends State<BidangView> {
                     ),
                   );
                 },
-              ),
-            ),
-            // Tabel history fetch
-            Container(
-              width: double.infinity,
-              color: Colors.blueGrey.shade50,
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "History Fetch (Last & Average ms)",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Obx(() {
-                    if (records.isEmpty) return const Text("Belum ada record");
-                    return Column(
-                      children: records.map((r) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(flex: 2, child: Text(r.endpoint)),
-                              Expanded(flex: 1, child: Text('${r.lastMs} ms')),
-                              Expanded(flex: 1, child: Text('${r.averageMs} ms')),
-                              Expanded(flex: 1, child: Text(r.mode)),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  }),
-                ],
               ),
             ),
           ],

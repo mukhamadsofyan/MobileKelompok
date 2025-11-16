@@ -5,6 +5,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../data/models/StrukturalModel.dart';
 import '../controllers/struktur_controller.dart';
+import '../../../controllers/auth_controller.dart';
 
 class StrukturKabinetView extends StatefulWidget {
   const StrukturKabinetView({super.key});
@@ -15,11 +16,11 @@ class StrukturKabinetView extends StatefulWidget {
 
 class _StrukturKabinetViewState extends State<StrukturKabinetView> {
   late StrukturalController c;
+  String query = '';
 
   @override
   void initState() {
     super.initState();
-    // pastikan controller sudah tersedia
     if (!Get.isRegistered<StrukturalController>()) {
       c = Get.put(StrukturalController());
     } else {
@@ -28,341 +29,311 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
     c.loadAll();
   }
 
-  String query = '';
-
   @override
   Widget build(BuildContext context) {
+    final auth = Get.find<AuthController>(); // akses admin
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F6),
 
-      // ===== HEADER APPBAR =====
-      appBar: AppBar(
-        title: Text(
-          'Struktur Kabinet',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Colors.white,
+      body: Column(
+        children: [
+          // ==================== HEADER GRADIENT ====================
+          Container(
+            padding: const EdgeInsets.only(top: 45, left: 20, right: 20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF009688),
+                  Color(0xFF4DB6AC),
+                  Color(0xFF80CBC4),
+                ],
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(32),
+                bottomRight: Radius.circular(32),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.18),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 22),
+                      onPressed: () => Get.back(),
+                    ),
+                    Text(
+                      "Struktur Kabinet",
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.filter_alt_rounded,
+                          color: Colors.white),
+                      onSelected: (value) {
+                        if (value == 'jabatan') {
+                          c.list.sort((a, b) => _jabatanLevel(b.role)
+                              .compareTo(_jabatanLevel(a.role)));
+                        } else if (value == 'terbaru') {
+                          c.list.sort((a, b) => b.id!.compareTo(a.id!));
+                        } else if (value == 'terlama') {
+                          c.list.sort((a, b) => a.id!.compareTo(b.id!));
+                        }
+                        setState(() {});
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                            value: 'jabatan', child: Text("Jabatan Tertinggi")),
+                        PopupMenuItem(value: 'terbaru', child: Text("Terbaru")),
+                        PopupMenuItem(value: 'terlama', child: Text("Terlama")),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // ============== SEARCH BAR CLEAN ==============
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+                  ),
+                  child: TextField(
+                    onChanged: (value) =>
+                        setState(() => query = value.toLowerCase()),
+                    decoration: InputDecoration(
+                      hintText: "Cari anggota kabinet...",
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+              ],
+            ),
           ),
-        ),
-        backgroundColor: Colors.green.shade700,
-        elevation: 5,
-        shadowColor: Colors.green.withOpacity(0.4),
-        centerTitle: true,
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list_rounded, color: Colors.white),
-            onSelected: (value) {
-              if (value == 'jabatan') {
-                c.list.sort(
-                    (a, b) => _jabatanLevel(b.role).compareTo(_jabatanLevel(a.role)));
-              } else if (value == 'terbaru') {
-                c.list.sort((a, b) => b.id!.compareTo(a.id!));
-              } else if (value == 'terlama') {
-                c.list.sort((a, b) => a.id!.compareTo(b.id!));
+
+          // ==================== LIST GRID ====================
+          Expanded(
+            child: Obx(() {
+              if (c.loading.value) {
+                return const Center(child: CircularProgressIndicator());
               }
-              setState(() {});
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'jabatan', child: Text('Urutkan Jabatan Tertinggi')),
-              PopupMenuItem(value: 'terbaru', child: Text('Urutkan Terbaru')),
-              PopupMenuItem(value: 'terlama', child: Text('Urutkan Terlama')),
-            ],
+
+              final filtered = c.list.where((s) {
+                return s.name.toLowerCase().contains(query) ||
+                    s.role.toLowerCase().contains(query);
+              }).toList();
+
+              if (filtered.isEmpty) {
+                return Center(
+                  child: Text(
+                    "Tidak ada anggota ditemukan",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                );
+              }
+
+              return GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: 0.85,
+                ),
+                itemCount: filtered.length,
+                itemBuilder: (_, index) {
+                  final s = filtered[index];
+
+                  return FadeInUp(
+                    duration: Duration(milliseconds: 400 + (index * 45)),
+                    child: GestureDetector(
+                      onTap: () => _showDetailFull(s),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white,
+                              Colors.teal.shade50,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.teal.withOpacity(0.15),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircleAvatar(
+                              radius: 34,
+                              backgroundColor: Colors.teal.shade100,
+                              child: Text(
+                                s.name[0].toUpperCase(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal.shade700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              s.name,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.teal.shade900,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              s.role,
+                              style: GoogleFonts.poppins(
+                                color: Colors.teal.shade700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            }),
           ),
         ],
       ),
 
-      // ===== FLOATING ACTION BUTTON =====
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Future.delayed(const Duration(milliseconds: 50), () {
-            _showDialog(context, c);
-          });
-        },
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Tambah'),
-        backgroundColor: Colors.green.shade700,
-      ),
-
-      // ===== BODY =====
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await c.loadAll();
-        },
-        child: Column(
-          children: [
-            // ===== SEARCH BAR =====
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: TextField(
-                onChanged: (value) => setState(() => query = value.toLowerCase()),
-                decoration: InputDecoration(
-                  hintText: 'Cari anggota kabinet...',
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                  hintStyle: GoogleFonts.poppins(
-                    color: Colors.grey.shade500,
-                    fontSize: 14,
-                  ),
-                ),
+      // ============== FAB ONLY ADMIN ==============
+      floatingActionButton: Get.find<AuthController>().isAdmin
+          ? FloatingActionButton.extended(
+              backgroundColor: Colors.teal.shade700,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                "Tambah",
+                style: TextStyle(color: Colors.white),
               ),
-            ),
-
-            // ===== LIST ANGGOTA =====
-            Expanded(
-              child: Obx(() {
-                if (c.loading.value) {
-                  return const Center(
-                      child: CircularProgressIndicator(color: Colors.green));
-                }
-
-                final filtered = c.list.where((s) {
-                  return s.name.toLowerCase().contains(query) ||
-                      s.role.toLowerCase().contains(query);
-                }).toList();
-
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'Tidak ada anggota ditemukan 😢',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  );
-                }
-
-                final gradientColors = [
-                  Colors.white,
-                  Colors.green.shade50,
-                  Colors.white,
-                ];
-
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final s = filtered[index];
-
-                    return FadeInUp(
-                      duration: Duration(milliseconds: 400 + (index * 50)),
-                      child: GestureDetector(
-                        onTap: () => _showDetailFull(s),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 400),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            gradient: LinearGradient(
-                              colors: gradientColors,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.green.withOpacity(0.15),
-                                blurRadius: 12,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert,
-                                      color: Colors.grey),
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                        value: 'edit', child: Text('Edit Anggota')),
-                                    const PopupMenuItem(
-                                        value: 'hapus', child: Text('Hapus Anggota')),
-                                  ],
-                                  onSelected: (value) async {
-                                    if (value == 'edit') {
-                                      Future.delayed(const Duration(milliseconds: 100),
-                                          () {
-                                        _showDialog(context, c, s);
-                                      });
-                                    } else if (value == 'hapus') {
-                                      _confirmDelete(context, c, s.id!);
-                                    }
-                                  },
-                                ),
-                              ),
-                              Align(
-                                alignment: Alignment.center,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 35,
-                                        backgroundColor: Colors.green.shade100,
-                                        child: Text(
-                                          s.name.isNotEmpty
-                                              ? s.name[0].toUpperCase()
-                                              : '?',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 26,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.green.shade700,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        s.name,
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.poppins(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green.shade900,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      Text(
-                                        s.role,
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.green.shade600,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }),
-            ),
-          ],
-        ),
-      ),
+              onPressed: () => _showDialog(context, c),
+            )
+          : null,
     );
   }
 
-  // === DETAIL FULL SCREEN ===
+  // ==================== DETAIL QR ====================
   void _showDetailFull(Struktural s) {
     final qrData = "ANGGOTA|${s.id}|${s.name}|${s.role}";
 
     Get.to(() => Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
-            title: Text(
-              'Detail Anggota',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-            ),
-            backgroundColor: Colors.green.shade700,
+            title: Text("Detail Anggota", style: GoogleFonts.poppins()),
+            backgroundColor: Colors.teal.shade700,
             foregroundColor: Colors.white,
+            centerTitle: true,
           ),
-          body: SafeArea(
+          body: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 10),
+                  // FOTO / INITIAL
                   CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.green.shade100,
+                    radius: 70,
+                    backgroundColor: Colors.teal.shade100,
                     child: Text(
-                      s.name.isNotEmpty ? s.name[0].toUpperCase() : '?',
+                      s.name[0].toUpperCase(),
                       style: GoogleFonts.poppins(
-                        fontSize: 38,
+                        fontSize: 42,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green.shade700,
+                        color: Colors.teal.shade800,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+
+                  const SizedBox(height: 20),
+
+                  // NAMA
                   Text(
                     s.name,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                      color: Colors.green.shade900,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.teal.shade900,
                     ),
                   ),
+
+                  const SizedBox(height: 6),
+
+                  // JABATAN
                   Text(
                     s.role,
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
-                      color: Colors.green.shade700,
+                      color: Colors.teal.shade600,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Divider(color: Colors.green.shade100, thickness: 1),
-                  const SizedBox(height: 20),
-                  FadeInUp(
-                    duration: const Duration(milliseconds: 600),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.green.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          QrImageView(
-                            data: qrData,
-                            version: QrVersions.auto,
-                            size: 180,
-                            eyeStyle: QrEyeStyle(
-                                eyeShape: QrEyeShape.circle,
-                                color: Colors.green.shade800),
-                            dataModuleStyle: QrDataModuleStyle(
-                                dataModuleShape: QrDataModuleShape.circle,
-                                color: Colors.green.shade800),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'QR Code Anggota',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green.shade900,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Kode unik: ${s.id}-${s.name.toUpperCase()}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
+
+                  const SizedBox(height: 30),
+
+                  // QR CODE
+                  QrImageView(
+                    data: qrData,
+                    version: QrVersions.auto,
+                    size: 200,
+                    eyeStyle: QrEyeStyle(
+                      eyeShape: QrEyeShape.circle,
+                      color: Colors.teal.shade700,
+                    ),
+                    dataModuleStyle: QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.circle,
+                      color: Colors.teal.shade700,
                     ),
                   ),
+
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -370,7 +341,6 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
         ));
   }
 
-  // === LEVEL JABATAN ===
   int _jabatanLevel(String role) {
     const levels = {
       'Ketua': 5,
@@ -382,199 +352,119 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
     return levels[role] ?? 0;
   }
 
-  // === DIALOG TAMBAH / EDIT ===
-// === DIALOG TAMBAH / EDIT ===
-void _showDialog(BuildContext context, StrukturalController c, [Struktural? s]) {
-  final nameController = TextEditingController(text: s?.name ?? '');
-  String selectedRole = s?.role ?? 'Anggota';
-  final roles = ['Ketua', 'Wakil Ketua', 'Sekretaris', 'Bendahara', 'Anggota'];
+  // ==================== DIALOG TAMBAH/EDIT ====================
+  void _showDialog(BuildContext context, StrukturalController c,
+      [Struktural? s]) {
+    final nameC = TextEditingController(text: s?.name ?? '');
+    String selectedRole = s?.role ?? 'Anggota';
 
-  bool isSaving = false;
+    final roles = [
+      'Ketua',
+      'Wakil Ketua',
+      'Sekretaris',
+      'Bendahara',
+      'Anggota'
+    ];
 
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            insetPadding: const EdgeInsets.all(20),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    s == null ? 'Tambah Anggota' : 'Edit Anggota',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.green.shade700,
-                    ),
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  s == null ? "Tambah Anggota" : "Edit Anggota",
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.teal.shade800,
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Nama',
-                      prefixIcon: const Icon(Icons.person_outline),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                ),
+                const SizedBox(height: 18),
+
+                // NAMA
+                TextField(
+                  controller: nameC,
+                  decoration: InputDecoration(
+                    labelText: "Nama",
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                DropdownButtonFormField(
+                  value: selectedRole,
+                  decoration: InputDecoration(
+                    labelText: "Jabatan",
+                    prefixIcon: const Icon(Icons.badge_outlined),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                  items: roles
+                      .map((role) =>
+                          DropdownMenuItem(value: role, child: Text(role)))
+                      .toList(),
+                  onChanged: (v) => selectedRole = v.toString(),
+                ),
+
+                const SizedBox(height: 20),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(),
+                        child: const Text("Batal"),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: selectedRole,
-                    decoration: InputDecoration(
-                      labelText: 'Jabatan',
-                      prefixIcon: const Icon(Icons.badge_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    items: roles
-                        .map((role) => DropdownMenuItem(value: role, child: Text(role)))
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) selectedRole = value;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  if (isSaving)
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: CircularProgressIndicator(color: Colors.green),
-                    ),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.grey.shade400),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const Text('Batal'),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal.shade700,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
                         ),
+                        onPressed: () async {
+                          final name = nameC.text.trim();
+
+                          if (name.isEmpty) {
+                            Get.snackbar(
+                                "Peringatan", "Nama tidak boleh kosong",
+                                backgroundColor: Colors.orange.shade100,
+                                colorText: Colors.orange.shade800);
+                            return;
+                          }
+
+                          if (s == null) {
+                            await c.addStruktural(name, selectedRole);
+                          } else {
+                            await c.updateStruktural(Struktural(
+                                id: s.id, name: name, role: selectedRole));
+                          }
+
+                          await c.loadAll();
+                          Get.back();
+                        },
+                        child: const Text("Simpan",
+                            style: TextStyle(color: Colors.white)),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green.shade700,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          onPressed: isSaving
-                              ? null
-                              : () async {
-                                  final name = nameController.text.trim();
-                                  if (name.isEmpty) {
-                                    Get.snackbar(
-                                      'Perhatian',
-                                      'Nama tidak boleh kosong',
-                                      backgroundColor: Colors.orange.shade100,
-                                      colorText: Colors.orange.shade900,
-                                      snackPosition: SnackPosition.TOP, // ✅ atas
-                                    );
-                                    return;
-                                  }
-
-                                  setState(() => isSaving = true);
-
-                                  try {
-                                    if (s == null) {
-                                      await c.addStruktural(name, selectedRole);
-                                      Get.snackbar(
-                                        'Berhasil',
-                                        'Anggota baru berhasil ditambahkan!',
-                                        backgroundColor: Colors.green.shade100,
-                                        colorText: Colors.green.shade900,
-                                        snackPosition: SnackPosition.TOP, // ✅ atas
-                                      );
-                                    } else {
-                                      await c.updateStruktural(Struktural(
-                                          id: s.id, name: name, role: selectedRole));
-                                      Get.snackbar(
-                                        'Berhasil',
-                                        'Data anggota berhasil diperbarui!',
-                                        backgroundColor: Colors.green.shade100,
-                                        colorText: Colors.green.shade900,
-                                        snackPosition: SnackPosition.TOP, // ✅ atas
-                                      );
-                                    }
-
-                                    await c.loadAll();
-                                    Navigator.pop(dialogContext); // auto close
-                                  } catch (e) {
-                                    setState(() => isSaving = false);
-                                    Get.snackbar(
-                                      'Gagal',
-                                      'Terjadi kesalahan: $e',
-                                      backgroundColor: Colors.red.shade100,
-                                      colorText: Colors.red.shade900,
-                                      snackPosition: SnackPosition.TOP,
-                                    );
-                                  }
-                                },
-                          child: const Text(
-                            'Simpan',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          );
-        },
-      );
-    },
-  );
-}
-
-// === KONFIRMASI HAPUS AUTO-CLOSE + NOTIF ATAS SAJA ===
-void _confirmDelete(BuildContext context, StrukturalController c, int id) {
-  Get.defaultDialog(
-    title: 'Hapus Anggota',
-    middleText: 'Apakah Anda yakin ingin menghapus anggota ini?',
-    textCancel: 'Batal',
-    textConfirm: 'Hapus',
-    confirmTextColor: Colors.white,
-    buttonColor: Colors.red.shade400,
-    onConfirm: () async {
-      try {
-        Get.back(); // tutup dialog konfirmasi
-        await c.deleteStrukturalById(id);
-        await c.loadAll();
-
-        // Snackbar atas saja
-        Get.snackbar(
-          'Terhapus',
-          'Data anggota berhasil dihapus!',
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-          snackPosition: SnackPosition.TOP, // ✅ atas
+          ),
         );
-      } catch (e) {
-        Get.snackbar(
-          'Gagal',
-          'Terjadi kesalahan saat menghapus: $e',
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-          snackPosition: SnackPosition.TOP,
-        );
-      }
-    },
-  );
-}
-
-
+      },
+    );
+  }
 }

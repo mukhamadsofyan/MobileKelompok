@@ -2,7 +2,7 @@ class Keuanganmodel {
   final int? id;
   final String title;
   final double amount;
-  final String type; // "Pemasukan" / "Pengeluaran"
+  final String type;
   final DateTime date;
 
   Keuanganmodel({
@@ -15,7 +15,7 @@ class Keuanganmodel {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'title': title,
       'amount': amount,
       'type': type,
@@ -26,10 +26,12 @@ class Keuanganmodel {
   factory Keuanganmodel.fromMap(Map<String, dynamic> map) {
     return Keuanganmodel(
       id: map['id'],
-      title: map['title'],
-      amount: map['amount'],
-      type: map['type'],
-      date: DateTime.parse(map['date']),
+      title: map['title'] ?? '',
+      amount: (map['amount'] is int)
+          ? (map['amount'] as int).toDouble()
+          : (map['amount'] ?? 0.0).toDouble(),
+      type: map['type'] ?? '',
+      date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(),
     );
   }
 }

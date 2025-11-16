@@ -13,9 +13,17 @@ class Struktural {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  // INSERT — tanpa ID
+  Map<String, dynamic> toInsertMap() {
     return {
-      'id': id,
+      'name': name,
+      'role': role,
+    };
+  }
+
+  // UPDATE — tanpa ID
+  Map<String, dynamic> toUpdateMap() {
+    return {
       'name': name,
       'role': role,
     };

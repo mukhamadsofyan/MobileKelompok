@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
+import 'package:orgtrack/app/data/db/db_helper.dart';
 import 'package:orgtrack/app/data/models/AgendaModel.dart';
-import '../../../data/db/db_helper.dart';
 
 class AgendaController extends GetxController {
-  final DBHelper db = DBHelper();
+  final SupabaseDB db = SupabaseDB();
 
   var agendas = <AgendaOrganisasi>[].obs;
   var loading = false.obs;
@@ -14,23 +14,44 @@ class AgendaController extends GetxController {
     fetchAgendas();
   }
 
-  void fetchAgendas() async {
+  // ===============================
+  // Ambil daftar agenda dari Supabase
+  // ===============================
+  Future<void> fetchAgendas() async {
     loading.value = true;
-    agendas.value = await db.getAgendaOrganisasi();
+    try {
+      agendas.value = await db.getAgendaOrganisasi();
+    } catch (e) {
+      print("Error fetching agendas: $e");
+    }
     loading.value = false;
   }
 
-  void addAgenda(AgendaOrganisasi a) async {
+  // Alias untuk tombol "Muat Ulang"
+  Future<void> loadAgenda() async {
+    return fetchAgendas();
+  }
+
+  // ===============================
+  // Tambah agenda baru
+  // ===============================
+  Future<void> addAgenda(AgendaOrganisasi a) async {
     await db.insertAgenda(a);
     fetchAgendas();
   }
 
-  void deleteAgenda(int id) async {
+  // ===============================
+  // Hapus agenda
+  // ===============================
+  Future<void> deleteAgenda(int id) async {
     await db.deleteAgenda(id);
     fetchAgendas();
   }
 
-  void updateAgenda(AgendaOrganisasi a) async {
+  // ===============================
+  // Update agenda
+  // ===============================
+  Future<void> updateAgenda(AgendaOrganisasi a) async {
     await db.updateAgenda(a);
     fetchAgendas();
   }

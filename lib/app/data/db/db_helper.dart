@@ -1,322 +1,193 @@
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/AgendaModel.dart';
 import '../models/KeuanganModel.dart';
 import '../models/StrukturalModel.dart';
 import '../models/program_kerja.dart';
 import '../models/activity.dart';
 
-class DBHelper {
-  static Database? _db;
-
-  static const int _dbVersion = 4;
-  static const String _dbName = 'orgtrack.db';
-
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await _initDb();
-    return _db!;
-  }
-
-  Future<Database> _initDb() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _dbName);
-
-    return await openDatabase(
-      path,
-      version: _dbVersion,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
-  }
-
-  // ================= CREATE DATABASE =================
-  Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS activities (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        description TEXT,
-        date TEXT NOT NULL
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE program_kerja(
-        id INTEGER PRIMARY KEY,
-        bidangId INTEGER,
-        judul TEXT NOT NULL,
-        deskripsi TEXT,
-        tanggal TEXT
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS keuangan (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        amount REAL NOT NULL,
-        type TEXT NOT NULL,
-        date TEXT NOT NULL
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS struktural (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        role TEXT NOT NULL
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS agenda_organisasi (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        description TEXT,
-        date TEXT NOT NULL
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS attendance (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        agenda_id INTEGER NOT NULL,
-        struktural_id INTEGER NOT NULL,
-        present INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-  }
-
-  // ================= UPGRADE DATABASE =================
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS program_kerja (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          nama TEXT NOT NULL,
-          deskripsi TEXT,
-          tanggalMulai TEXT,
-          tanggalSelesai TEXT
-        )
-      ''');
-    }
-
-    if (oldVersion < 3) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS keuangan (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT NOT NULL,
-          amount REAL NOT NULL,
-          type TEXT NOT NULL,
-          date TEXT NOT NULL
-        )
-      ''');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS struktural (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          role TEXT NOT NULL
-        )
-      ''');
-    }
-
-    if (oldVersion < 4) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS agenda_organisasi (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT NOT NULL,
-          description TEXT,
-          date TEXT NOT NULL
-        )
-      ''');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS attendance (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          agenda_id INTEGER NOT NULL,
-          struktural_id INTEGER NOT NULL,
-          present INTEGER NOT NULL DEFAULT 0
-        )
-      ''');
-    }
-  }
+class SupabaseDB {
+  final supabase = Supabase.instance.client;
 
   // ================= CRUD ACTIVITIES =================
   Future<List<Activity>> getActivities() async {
-    final db = await database;
-    final rows = await db.query('activities', orderBy: 'id DESC');
-    return rows.map((r) => Activity.fromMap(r)).toList();
+    final data = await supabase
+        .from('activities')
+        .select()
+        .order('id', ascending: false);
+
+    return data.map<Activity>((e) => Activity.fromMap(e)).toList();
   }
 
-  Future<int> insertActivity(Activity a) async {
-    final db = await database;
-    return await db.insert('activities', a.toMap());
+  Future<dynamic> insertActivity(Activity a) async {
+    return await supabase.from('activities').insert(a.toMap());
+  }
+
+  Future<dynamic> updateActivity(Activity a) async {
+    if (a.id == null) throw Exception("ID Activity tidak boleh null");
+    return await supabase.from('activities').update(a.toMap()).eq('id', a.id!);
+  }
+
+  Future<dynamic> deleteActivity(int id) async {
+    return await supabase.from('activities').delete().eq('id', id);
   }
 
   // ================= CRUD PROGRAM KERJA =================
   Future<List<ProgramKerja>> getProgramKerja({int? bidangId}) async {
-    final db = await database;
-    List<Map<String, dynamic>> rows;
+    List<dynamic> raw;
+
     if (bidangId != null) {
-      rows = await db.query(
-        'program_kerja',
-        where: 'bidangId=?',
-        whereArgs: [bidangId],
-        orderBy: 'tanggalMulai DESC',
-      );
+      raw = await supabase
+          .from('program_kerja')
+          .select()
+          .eq('bidangId', bidangId)
+          .order('tanggal', ascending: false);
     } else {
-      rows = await db.query('program_kerja', orderBy: 'tanggal DESC');
+      raw = await supabase
+          .from('program_kerja')
+          .select()
+          .order('tanggal', ascending: false);
     }
-    return rows.map((r) => ProgramKerja.fromMap(r)).toList();
+
+    return raw.map<ProgramKerja>((e) => ProgramKerja.fromMap(e)).toList();
   }
 
-  Future<int> insertProgramKerja(ProgramKerja p) async {
-    final db = await database;
-    return await db.insert('program_kerja', p.toMap());
+  Future<dynamic> insertProgramKerja(ProgramKerja p) async {
+    return await supabase.from('program_kerja').insert(p.toMap());
   }
 
-  Future<int> updateProgramKerja(ProgramKerja p) async {
-    final db = await database;
-    return await db.update(
-      'program_kerja',
-      p.toMap(),
-      where: 'id=?',
-      whereArgs: [p.id],
-    );
+  Future<dynamic> updateProgramKerja(ProgramKerja p) async {
+    if (p.id == null) throw Exception("ID Program Kerja null");
+    return await supabase
+        .from('program_kerja')
+        .update(p.toMap())
+        .eq('id', p.id!);
   }
 
-  Future<int> deleteProgramKerja(int id) async {
-    final db = await database;
-    return await db.delete('program_kerja', where: 'id=?', whereArgs: [id]);
+  Future<dynamic> deleteProgramKerja(int id) async {
+    return await supabase.from('program_kerja').delete().eq('id', id);
   }
 
   // ================= CRUD KEUANGAN =================
   Future<List<Keuanganmodel>> getKeuangan() async {
-    final db = await database;
-    final rows = await db.query('keuangan', orderBy: 'date DESC');
-    return rows.map((r) => Keuanganmodel.fromMap(r)).toList();
+    final data = await supabase
+        .from('keuangan')
+        .select()
+        .order('date', ascending: false);
+
+    return data.map<Keuanganmodel>((e) => Keuanganmodel.fromMap(e)).toList();
   }
 
-  // --- Tambah data baru ---
-  Future<int> insertKeuangan(Keuanganmodel k) async {
-    final db = await database;
-    return await db.insert('keuangan', k.toMap());
+  Future<dynamic> insertKeuangan(Keuanganmodel k) async {
+    return await supabase.from('keuangan').insert(k.toMap());
   }
 
-  // --- Update data (buat fitur edit) ---
-  Future<int> updateKeuangan(Keuanganmodel k) async {
-    final db = await database;
-    return await db.update(
-      'keuangan',
-      k.toMap(),
-      where: 'id = ?',
-      whereArgs: [k.id],
-    );
+  Future<dynamic> updateKeuangan(Keuanganmodel k) async {
+    if (k.id == null) throw Exception("ID Keuangan null");
+    return await supabase.from('keuangan').update(k.toMap()).eq('id', k.id!);
   }
 
-  // --- Hapus data berdasarkan id ---
-  Future<int> deleteKeuangan(int id) async {
-    final db = await database;
-    return await db.delete('keuangan', where: 'id=?', whereArgs: [id]);
+  Future<dynamic> deleteKeuangan(int id) async {
+    return await supabase.from('keuangan').delete().eq('id', id);
   }
 
   // ================= CRUD STRUKTURAL =================
   Future<List<Struktural>> getStruktural() async {
-    final db = await database;
-    final rows = await db.query('struktural', orderBy: 'id DESC');
-    return rows.map((r) => Struktural.fromMap(r)).toList();
+    final data = await supabase
+        .from('struktural')
+        .select()
+        .order('id', ascending: false);
+
+    return data.map<Struktural>((e) => Struktural.fromMap(e)).toList();
   }
 
-  Future<int> insertStruktural(Struktural s) async {
-    final db = await database;
-    return await db.insert('struktural', s.toMap());
-  }
+Future<dynamic> insertStruktural(Struktural s) async {
+  return await supabase.from('struktural').insert(s.toInsertMap());
+}
 
-  Future<int> updateStruktural(Struktural s) async {
-    final db = await database;
-    return await db
-        .update('struktural', s.toMap(), where: 'id=?', whereArgs: [s.id]);
-  }
 
-  Future<int> deleteStruktural(int id) async {
-    final db = await database;
-    return await db.delete('struktural', where: 'id=?', whereArgs: [id]);
+Future<dynamic> updateStruktural(Struktural s) async {
+  if (s.id == null) throw Exception("ID Struktural null");
+
+  return await supabase
+      .from('struktural')
+      .update(s.toUpdateMap())      // ← tanpa ID
+      .eq('id', s.id!);
+}
+
+
+  Future<dynamic> deleteStruktural(int id) async {
+    return await supabase.from('struktural').delete().eq('id', id);
   }
 
   Future<Struktural> getStrukturalById(int id) async {
-    final db = await database;
-    final result = await db.query('struktural', where: 'id=?', whereArgs: [id]);
-    return Struktural.fromMap(result.first);
+    final data =
+        await supabase.from('struktural').select().eq('id', id).single();
+
+    return Struktural.fromMap(data);
   }
 
   // ================= CRUD AGENDA ORGANISASI =================
   Future<List<AgendaOrganisasi>> getAgendaOrganisasi() async {
-    final db = await database;
-    final result = await db.query('agenda_organisasi', orderBy: 'date DESC');
-    return result.map((r) => AgendaOrganisasi.fromMap(r)).toList();
+    final raw = await supabase
+        .from('agenda_organisasi')
+        .select()
+        .order('date', ascending: false);
+
+    return raw
+        .map<AgendaOrganisasi>((e) => AgendaOrganisasi.fromMap(e))
+        .toList();
   }
 
-  Future<int> insertAgenda(AgendaOrganisasi a) async {
-    final db = await database;
-    return await db.insert('agenda_organisasi', a.toMap());
+  Future<dynamic> insertAgenda(AgendaOrganisasi a) async {
+    return await supabase.from('agenda_organisasi').insert(a.toInsertMap());
   }
 
-  Future<int> updateAgenda(AgendaOrganisasi a) async {
-    final db = await database;
-    return await db.update(
-      'agenda_organisasi',
-      a.toMap(),
-      where: 'id=?',
-      whereArgs: [a.id],
-    );
+  Future<dynamic> updateAgenda(AgendaOrganisasi a) async {
+    if (a.id == null) throw Exception("ID Agenda null");
+
+    return await supabase
+        .from('agenda_organisasi')
+        .update(a.toUpdateMap())
+        .eq('id', a.id!);
   }
 
-  Future<int> deleteAgenda(int id) async {
-    final db = await database;
-    // Hapus agenda dan sekaligus absensinya
+  Future<dynamic> deleteAgenda(int id) async {
+    // Hapus attendance dulu
     await deleteAttendanceByAgenda(id);
-    return await db.delete('agenda_organisasi', where: 'id=?', whereArgs: [id]);
+
+    // Baru hapus agenda
+    return await supabase.from('agenda_organisasi').delete().eq('id', id);
   }
 
-  // ================= CRUD ABSENSI =================
+  // ================= CRUD ATTENDANCE =================
   Future<List<Map<String, dynamic>>> getAttendanceByAgenda(int agendaId) async {
-    final db = await database;
-    final rows = await db
-        .query('attendance', where: 'agenda_id=?', whereArgs: [agendaId]);
-    return rows;
+    return await supabase.from('attendance').select().eq('agenda_id', agendaId);
   }
 
-  Future<int> markAttendance(
+  Future<dynamic> markAttendance(
       int agendaId, int strukturalId, bool present) async {
-    final db = await database;
-
-    final existing = await db.query(
-      'attendance',
-      where: 'agenda_id=? AND struktural_id=?',
-      whereArgs: [agendaId, strukturalId],
-    );
+    final existing = await supabase
+        .from('attendance')
+        .select()
+        .eq('agenda_id', agendaId)
+        .eq('struktural_id', strukturalId);
 
     if (existing.isNotEmpty) {
-      return await db.update(
-        'attendance',
-        {'present': present ? 1 : 0},
-        where: 'agenda_id=? AND struktural_id=?',
-        whereArgs: [agendaId, strukturalId],
-      );
-    } else {
-      return await db.insert('attendance', {
-        'agenda_id': agendaId,
-        'struktural_id': strukturalId,
-        'present': present ? 1 : 0,
-      });
+      return await supabase
+          .from('attendance')
+          .update({'present': present ? 1 : 0})
+          .eq('agenda_id', agendaId)
+          .eq('struktural_id', strukturalId);
     }
+
+    return await supabase.from('attendance').insert({
+      'agenda_id': agendaId,
+      'struktural_id': strukturalId,
+      'present': present ? 1 : 0,
+    });
   }
 
-  Future<int> deleteAttendanceByAgenda(int agendaId) async {
-    final db = await database;
-    return await db
-        .delete('attendance', where: 'agenda_id=?', whereArgs: [agendaId]);
+  Future<dynamic> deleteAttendanceByAgenda(int agendaId) async {
+    return await supabase.from('attendance').delete().eq('agenda_id', agendaId);
   }
 }

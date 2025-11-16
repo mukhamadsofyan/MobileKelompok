@@ -13,22 +13,15 @@ class Activity {
 
   factory Activity.fromMap(Map<String, dynamic> m) => Activity(
         id: m['id'] as int?,
-        title: m['title'] as String,
-        description: m['description'] as String? ?? '',
-        date: DateTime.parse(m['date'] as String),
+        title: m['title'] ?? '',
+        description: m['description'] ?? '',
+        date: DateTime.tryParse(m['date'] ?? '') ?? DateTime.now(),
       );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
+        if (id != null) 'id': id,  // biarkan null untuk auto increment
         'title': title,
         'description': description,
         'date': date.toIso8601String(),
       };
-
-  static Activity sample() => Activity(
-        id: 1,
-        title: 'Rapat Mingguan',
-        description: 'Rapat koordinasi mingguan',
-        date: DateTime.now(),
-      );
 }

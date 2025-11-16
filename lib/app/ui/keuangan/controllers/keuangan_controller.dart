@@ -1,10 +1,11 @@
 import 'package:get/get.dart';
+import 'package:orgtrack/app/data/db/db_helper.dart';
 import 'package:orgtrack/app/data/models/KeuanganModel.dart';
-import '../../../data/db/db_helper.dart';
 
 class KeuanganController extends GetxController {
+  final SupabaseDB db = SupabaseDB();   
+
   var keuanganList = <Keuanganmodel>[].obs;
-  final DBHelper db = DBHelper();
 
   @override
   void onInit() {
@@ -12,57 +13,66 @@ class KeuanganController extends GetxController {
     loadKeuangan();
   }
 
-  // --- Ambil semua data dari database ---
+  /// Ambil semua data keuangan dari Supabase
   Future<void> loadKeuangan() async {
-    final data = await db.getKeuangan();
-    keuanganList.assignAll(data);
+    try {
+      final data = await db.getKeuangan();
+      keuanganList.assignAll(data);
+    } catch (e) {
+      print("Error load keuangan: $e");
+    }
   }
 
-  // --- Tambah data baru ---
+  /// Tambah data baru
   Future<void> addKeuangan(Keuanganmodel k) async {
     await db.insertKeuangan(k);
     await loadKeuangan();
   }
 
-  // --- Update data lama (disimpan ke database juga) ---
+  /// Update data lama
   Future<void> updateKeuangan(Keuanganmodel k) async {
+    if (k.id == null) {
+      print("Error: ID keuangan null");
+      return;
+    }
+
     await db.updateKeuangan(k);
     await loadKeuangan();
   }
 
-  // --- Hapus data (opsional jika nanti mau ditambah) ---
+  /// Hapus berdasarkan ID
   Future<void> deleteKeuangan(int id) async {
     await db.deleteKeuangan(id);
     await loadKeuangan();
   }
 
-  // --- Hitung total saldo ---
+  /// Hitung total saldo
   double totalSaldo() {
-    double masuk = totalByType('Pemasukan');
-    double keluar = totalByType('Pengeluaran');
-    return masuk - keluar;
+    double pemasukan = totalByType('Pemasukan');
+    double pengeluaran = totalByType('Pengeluaran');
+    return pemasukan - pengeluaran;
   }
 
-  // --- Hitung total berdasarkan tipe ---
+  /// Hitung total berdasarkan jenis
   double totalByType(String type) {
     return keuanganList
         .where((k) => k.type == type)
-        .fold(0.0, (a, b) => a + b.amount);
+        .fold(0.0, (sum, item) => sum + item.amount);
   }
 
-  // --- Data grafik per bulan ---
+  /// Data grafik per bulan (1 tahun)
   Map<String, List<double>> generateMonthlyDataByType() {
     final now = DateTime.now();
     List<double> pemasukan = List.filled(12, 0.0);
     List<double> pengeluaran = List.filled(12, 0.0);
 
-    for (var k in keuanganList) {
-      if (k.date.year == now.year) {
-        int monthIndex = k.date.month - 1;
-        if (k.type == 'Pemasukan') {
-          pemasukan[monthIndex] += k.amount;
-        } else if (k.type == 'Pengeluaran') {
-          pengeluaran[monthIndex] += k.amount;
+    for (var item in keuanganList) {
+      if (item.date.year == now.year) {
+        int i = item.date.month - 1;
+        if (item.type == 'Pemasukan') {
+          pemasukan[i] += item.amount;
+        } else if (item.type == 'Pengeluaran') {
+          pengeluaran[i] += item.amount;
         }
       }
     }
@@ -73,7 +83,6 @@ class KeuanganController extends GetxController {
     };
   }
 
-  // --- Refresh manual dari UI ---
   Future<void> refreshData() async {
     await loadKeuangan();
     update();
