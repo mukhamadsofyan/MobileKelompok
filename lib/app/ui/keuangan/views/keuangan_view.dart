@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:orgtrack/app/data/models/KeuanganModel.dart';
-import 'package:orgtrack/app/ui/keuangan/controllers/keuangan_controller.dart';
+
+import 'package:orgtrack/app/controllers/theme_controller.dart';
 import 'package:orgtrack/app/controllers/auth_controller.dart';
+import 'package:orgtrack/app/ui/keuangan/controllers/keuangan_controller.dart';
+import 'package:orgtrack/app/data/models/KeuanganModel.dart';
 
 class KeuanganView extends StatelessWidget {
   const KeuanganView({super.key});
@@ -13,40 +15,57 @@ class KeuanganView extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.find<KeuanganController>();
     final auth = Get.find<AuthController>();
+    final themeC = Get.find<ThemeController>();
+
     final filter = RxString('Semua');
 
+    final colorBG = Theme.of(context).colorScheme.background;
+    final cardColor = Theme.of(context).cardColor;
+    final colorText = Theme.of(context).colorScheme.onBackground;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F6),
+      backgroundColor: colorBG,
 
       body: Column(
         children: [
-          // ===================== HEADER GRADIENT =====================
+          // ===================== HEADER ==========================
           Container(
-            padding:
-                const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 12),
-            decoration: const BoxDecoration(
+            padding: const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 12),
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF009688),
-                  Color(0xFF4DB6AC),
-                  Color(0xFF80CBC4),
-                ],
+                colors: themeC.isDark
+                    ? const [
+                        Color(0xFF00332E),
+                        Color(0xFF004D40),
+                        Color(0xFF003E39),
+                      ]
+                    : const [
+                        Color(0xFF009688),
+                        Color(0xFF4DB6AC),
+                        Color(0xFF80CBC4),
+                      ],
               ),
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(32),
                 bottomRight: Radius.circular(32),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(themeC.isDark ? 0.45 : 0.16),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                )
+              ],
             ),
 
             child: Column(
               children: [
-                // ===== ROW BACK + TITLE + FILTER =====
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Tombol back
+                    // BACK BUTTON
                     GestureDetector(
                       onTap: () => Get.back(),
                       child: Container(
@@ -60,32 +79,45 @@ class KeuanganView extends StatelessWidget {
                       ),
                     ),
 
-                    Text(
+                    // TITLE
+                    const Text(
                       "Keuangan",
                       style: TextStyle(
-                        color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
+                        color: Colors.white,
                       ),
                     ),
 
-                    PopupMenuButton<String>(
-                      icon:
-                          const Icon(Icons.filter_alt_rounded, color: Colors.white),
-                      color: Colors.white,
-                      onSelected: (v) => filter.value = v,
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: "Semua", child: Text("Semua")),
-                        PopupMenuItem(value: "Pemasukan", child: Text("Pemasukan")),
-                        PopupMenuItem(value: "Pengeluaran", child: Text("Pengeluaran")),
+                    // ACTIONS (TOGGLE + FILTER)
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            themeC.isDark ? Icons.dark_mode : Icons.light_mode,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => themeC.toggleTheme(),
+                        ),
+
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.filter_alt_rounded, color: Colors.white),
+                          color: cardColor,
+                          onSelected: (v) => filter.value = v,
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: "Semua", child: Text("Semua")),
+                            PopupMenuItem(value: "Pemasukan", child: Text("Pemasukan")),
+                            PopupMenuItem(value: "Pengeluaran", child: Text("Pengeluaran")),
+                          ],
+                        ),
                       ],
-                    ),
+                    )
                   ],
                 ),
 
                 const SizedBox(height: 22),
 
-                // ===== SALDO SUMMARY =====
+                // ===================== SUMMARY ==========================
                 Obx(() {
                   final saldo = c.totalSaldo();
                   final pemasukan = c.totalByType('Pemasukan');
@@ -94,9 +126,9 @@ class KeuanganView extends StatelessWidget {
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _summaryCard("Saldo", saldo, Colors.teal),
-                      _summaryCard("Masuk", pemasukan, Colors.green),
-                      _summaryCard("Keluar", pengeluaran, Colors.red),
+                      _summaryCard("Saldo", saldo, Colors.teal, cardColor, colorText),
+                      _summaryCard("Masuk", pemasukan, Colors.green, cardColor, colorText),
+                      _summaryCard("Keluar", pengeluaran, Colors.red, cardColor, colorText),
                     ],
                   );
                 }),
@@ -106,7 +138,7 @@ class KeuanganView extends StatelessWidget {
             ),
           ),
 
-          // ===================== BODY =====================
+          // ===================== BODY ==========================
           Expanded(
             child: Obx(() {
               final list = c.keuanganList
@@ -118,10 +150,10 @@ class KeuanganView extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    // ===================== GRAFIK =====================
+                    // GRAFIK
                     Card(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18)),
+                      color: cardColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                       elevation: 2,
                       child: Padding(
                         padding: const EdgeInsets.all(18),
@@ -130,7 +162,10 @@ class KeuanganView extends StatelessWidget {
                             Text(
                               "Grafik Keuangan Bulanan",
                               style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: colorText,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             SizedBox(height: 220, child: _barChart(c)),
@@ -143,8 +178,11 @@ class KeuanganView extends StatelessWidget {
 
                     Text(
                       "Daftar Transaksi",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: colorText,
+                      ),
                     ),
                     const SizedBox(height: 12),
 
@@ -152,16 +190,16 @@ class KeuanganView extends StatelessWidget {
                         ? Center(
                             child: Padding(
                               padding: const EdgeInsets.only(top: 40),
-                              child: Text("Belum ada transaksi",
-                                  style: TextStyle(
-                                      color: Colors.grey.shade600, fontSize: 16)),
+                              child: Text(
+                                "Belum ada transaksi",
+                                style: TextStyle(color: colorText.withOpacity(0.6)),
+                              ),
                             ),
                           )
                         : Column(
                             children: list.map((k) {
-                              final date =
-                                  DateFormat('dd MMM yyyy').format(k.date);
-                              return _transactionTile(k, date, c, auth);
+                              final date = DateFormat('dd MMM yyyy').format(k.date);
+                              return _transactionTile(k, date, c, auth, cardColor, colorText);
                             }).toList(),
                           ),
                   ],
@@ -172,7 +210,6 @@ class KeuanganView extends StatelessWidget {
         ],
       ),
 
-      // ================= FAB ADMIN =================
       floatingActionButton: auth.userRole.value == "admin"
           ? FloatingActionButton.extended(
               backgroundColor: Colors.teal.shade600,
@@ -185,20 +222,26 @@ class KeuanganView extends StatelessWidget {
   }
 
   // ===================================================================
-  // ====== SUMMARY CARD ===============================================
+  // SUMMARY CARD
   // ===================================================================
-  Widget _summaryCard(String title, double value, Color color) {
+  Widget _summaryCard(
+    String title,
+    double value,
+    Color color,
+    Color cardColor,
+    Color textColor,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.18),
-              blurRadius: 10,
+              color: color.withOpacity(0.20),
+              blurRadius: 8,
               offset: const Offset(0, 4),
             )
           ],
@@ -214,7 +257,7 @@ class KeuanganView extends StatelessWidget {
             Text(
               "Rp ${value.toStringAsFixed(0)}",
               style: TextStyle(
-                color: Colors.black87,
+                color: textColor,
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
               ),
@@ -226,35 +269,37 @@ class KeuanganView extends StatelessWidget {
   }
 
   // ===================================================================
-  // ====== TRANSACTION TILE ===========================================
+  // TRANSACTION TILE
   // ===================================================================
-  Widget _transactionTile(Keuanganmodel k, String date,
-      KeuanganController c, AuthController auth) {
+  Widget _transactionTile(
+    Keuanganmodel k,
+    String date,
+    KeuanganController c,
+    AuthController auth,
+    Color cardColor,
+    Color textColor,
+  ) {
     return Card(
+      color: cardColor,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: ListTile(
         leading: CircleAvatar(
           radius: 26,
-          backgroundColor: (k.type == "Pemasukan"
-                  ? Colors.green
-                  : Colors.red)
-              .withOpacity(0.18),
+          backgroundColor: (k.type == "Pemasukan" ? Colors.green : Colors.red)
+              .withOpacity(0.15),
           child: Icon(
-            k.type == "Pemasukan"
-                ? Icons.arrow_downward
-                : Icons.arrow_upward,
+            k.type == "Pemasukan" ? Icons.arrow_downward : Icons.arrow_upward,
             color: k.type == "Pemasukan" ? Colors.green : Colors.red,
           ),
         ),
         title: Text(
           k.title,
-          style:
-              const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor),
         ),
         subtitle: Text(
           "${k.type} • $date",
-          style: const TextStyle(color: Colors.black54),
+          style: TextStyle(color: textColor.withOpacity(0.6)),
         ),
         trailing: Text(
           "Rp ${k.amount.toStringAsFixed(0)}",
@@ -272,7 +317,7 @@ class KeuanganView extends StatelessWidget {
   }
 
   // ===================================================================
-  // ====== BAR CHART ===================================================
+  // BAR CHART
   // ===================================================================
   Widget _barChart(KeuanganController c) {
     final data = c.generateMonthlyDataByType();
@@ -283,45 +328,36 @@ class KeuanganView extends StatelessWidget {
       BarChartData(
         borderData: FlBorderData(show: false),
         gridData: const FlGridData(show: false),
+
         titlesData: FlTitlesData(
-          leftTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (v, _) {
-                  const months = [
-                    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-                    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-                  ];
-                  if (v < 0 || v > 11) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(months[v.toInt()],
-                        style: const TextStyle(fontSize: 10)),
-                  );
-                }),
+              showTitles: true,
+              getTitlesWidget: (v, _) {
+                const months = [
+                  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+                  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+                ];
+                if (v < 0 || v > 11) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(months[v.toInt()], style: const TextStyle(fontSize: 10)),
+                );
+              },
+            ),
           ),
         ),
+
         barGroups: List.generate(12, (i) {
           return BarChartGroupData(
             x: i,
             barsSpace: 6,
             barRods: [
-              BarChartRodData(
-                toY: pemasukan[i],
-                color: Colors.green,
-                width: 8,
-              ),
-              BarChartRodData(
-                toY: pengeluaran[i],
-                color: Colors.red,
-                width: 8,
-              ),
+              BarChartRodData(toY: pemasukan[i], color: Colors.green, width: 8),
+              BarChartRodData(toY: pengeluaran[i], color: Colors.red, width: 8),
             ],
           );
         }),
@@ -330,13 +366,12 @@ class KeuanganView extends StatelessWidget {
   }
 
   // ===================================================================
-  // ====== ADD/EDIT dialog ============================================
+  // ADD / EDIT DIALOG
   // ===================================================================
   void _showAddDialog(BuildContext context, KeuanganController c,
       [Keuanganmodel? old]) {
     final titleC = TextEditingController(text: old?.title ?? '');
-    final amountC =
-        TextEditingController(text: old?.amount.toString() ?? '');
+    final amountC = TextEditingController(text: old?.amount.toString() ?? '');
     final type = RxString(old?.type ?? "Pemasukan");
     final date = Rx<DateTime?>(old?.date);
 
@@ -346,6 +381,8 @@ class KeuanganView extends StatelessWidget {
         children: [
           TextField(controller: titleC, decoration: const InputDecoration(labelText: "Judul")),
           TextField(controller: amountC, decoration: const InputDecoration(labelText: "Jumlah")),
+          const SizedBox(height: 8),
+
           Obx(() => TextButton(
                 onPressed: () async {
                   final d = await showDatePicker(
@@ -368,14 +405,12 @@ class KeuanganView extends StatelessWidget {
                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                     .toList(),
                 onChanged: (v) => type.value = v!,
-              ))
+              )),
         ],
       ),
       textConfirm: "Simpan",
       onConfirm: () {
-        if (titleC.text.isEmpty ||
-            amountC.text.isEmpty ||
-            date.value == null) {
+        if (titleC.text.isEmpty || amountC.text.isEmpty || date.value == null) {
           Get.snackbar("Error", "Isi semua data!");
           return;
         }
@@ -400,7 +435,7 @@ class KeuanganView extends StatelessWidget {
   }
 
   // ===================================================================
-  // ====== DETAIL DIALOG ==============================================
+  // DETAIL DIALOG
   // ===================================================================
   void _showDetailDialog(Keuanganmodel k) {
     Get.defaultDialog(

@@ -1,173 +1,156 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:orgtrack/app/controllers/theme_controller.dart';
+import 'package:orgtrack/app/controllers/auth_controller.dart';
 import 'package:orgtrack/app/ui/bidang/controllers/bidang_controller.dart';
 import '../../programkerja/views/programkerja_view.dart';
 
 class BidangView extends StatelessWidget {
   BidangView({super.key});
 
-  final controller = Get.put(BidangControllerSupabase());
+  final controller = Get.find<BidangControllerSupabase>();
+  final auth = Get.find<AuthController>();
 
   @override
   Widget build(BuildContext context) {
+    final themeC = Get.find<ThemeController>();
+
+    final colorBG = Theme.of(context).colorScheme.background;
+    final cardColor = Theme.of(context).cardColor;
+    final colorText = Theme.of(context).colorScheme.onBackground;
+
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.teal.shade600,
-        child: const Icon(Icons.add, color: Colors.white),
-        onPressed: () => _showAddDialog(context),
-      ),
-      backgroundColor: const Color(0xFFF3F6F7),
-      body: Obx(() {
-        if (controller.loading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      floatingActionButton: auth.isAdmin
+          ? FloatingActionButton(
+              backgroundColor: Colors.teal.shade600,
+              child: const Icon(Icons.add, color: Colors.white),
+              onPressed: () => _showAddDialog(context),
+            )
+          : null,
 
-        final list = controller.bidangList;
+      backgroundColor: colorBG,
 
-        return Column(
-          children: [
-            // ===================== HEADER =====================
-            _header(),
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.loading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            const SizedBox(height: 12),
+          final list = controller.bidangList;
 
-            Expanded(
-              child: ListView.builder(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                itemCount: list.length,
-                itemBuilder: (_, i) {
-                  final b = list[i];
-
-                  return _bidangCard(context, b);
-                },
+          return Column(
+            children: [
+              _header(themeC, colorText, cardColor),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  itemCount: list.length,
+                  itemBuilder: (_, i) {
+                    final b = list[i];
+                    return _bidangCard(context, b, colorText, cardColor);
+                  },
+                ),
               ),
-            ),
-          ],
-        );
-      }),
+            ],
+          );
+        }),
+      ),
     );
   }
 
-  // ============================================================
-  //                          HEADER
-  // ============================================================
-  Widget _header() {
+  // ===============================================================
+  // HEADER DENGAN TOGGLE DARK/LIGHT
+  // ===============================================================
+  Widget _header(ThemeController themeC, Color colorText, Color cardColor) {
     return Container(
       padding: const EdgeInsets.only(top: 55, left: 20, right: 20, bottom: 25),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF009688),
-            Color(0xFF4DB6AC),
-            Color(0xFF80CBC4),
-          ],
+          colors: themeC.isDark
+              ? const [
+                  Color(0xFF00332E),
+                  Color(0xFF004D40),
+                  Color(0xFF003E39),
+                ]
+              : const [
+                  Color(0xFF009688),
+                  Color(0xFF4DB6AC),
+                  Color(0xFF80CBC4),
+                ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(themeC.isDark ? 0.40 : 0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // TITLE
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () => Get.back(),
-                child: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 22),
-              ),
-              const Text(
-                "Daftar Bidang",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 40),
-            ],
+          // BACK
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: const Icon(Icons.arrow_back_ios_new_rounded,
+                color: Colors.white),
           ),
 
-          const SizedBox(height: 20),
-
-          // SEARCH BOX
-          Container(
-            decoration: BoxDecoration(
+          // TITLE
+          const Text(
+            "Daftar Bidang",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
               color: Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.10),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
-            child: const TextField(
-              decoration: InputDecoration(
-                hintText: "Cari bidang...",
-                prefixIcon: Icon(Icons.search, color: Colors.teal),
-                border: InputBorder.none,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              ),
+          ),
+
+          // TOGGLE THEME
+          IconButton(
+            icon: Icon(
+              themeC.isDark ? Icons.dark_mode : Icons.light_mode,
+              color: Colors.white,
+              size: 26,
             ),
+            onPressed: () => themeC.toggleTheme(),
           ),
         ],
       ),
     );
   }
 
-  // ============================================================
-  //                    CARD BIDANG BARU (MODERN)
-  // ============================================================
-Widget _bidangCard(BuildContext context, dynamic b) {
-  return GestureDetector(
-    onTap: () {
-      Get.to(() => ProgramKerjaView(
-            bidangId: b.id,
-            bidangName: b.nama,
-          ));
-    },
+  // ===============================================================
+  // CARD BIDANG + ADMIN CRUD PROTECTION
+  // ===============================================================
+  Widget _bidangCard(BuildContext context, dynamic b, Color textColor, Color cardColor) {
+    final bool isAdmin = auth.isAdmin;
 
-    child: Hero(
-      tag: "bidang_${b.id}",
-      flightShuttleBuilder: (_, animation, __, ___, ____) {
-        return FadeTransition(
-          opacity: animation.drive(
-            CurveTween(curve: Curves.easeOut),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: Text(
-              b.nama,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        );
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => ProgramKerjaView(
+              bidangId: b.id,
+              bidangName: b.nama,
+            ));
       },
-
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: textColor.withOpacity(0.07),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -177,28 +160,28 @@ Widget _bidangCard(BuildContext context, dynamic b) {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // LEFT SIDE
+            // KIRI (ICON + TEXT)
             Row(
               children: [
                 CircleAvatar(
                   radius: 22,
-                  backgroundColor: Colors.teal.shade100,
-                  child: const Icon(Icons.workspaces_outline,
-                      color: Colors.teal, size: 22),
+                  backgroundColor: Colors.teal.shade100.withOpacity(0.7),
+                  child:
+                      const Icon(Icons.workspaces_outline, color: Colors.teal),
                 ),
+
                 const SizedBox(width: 14),
 
-                // TEXT HERO AREA
                 Hero(
                   tag: "title_${b.id}",
                   child: Material(
                     color: Colors.transparent,
                     child: Text(
                       b.nama,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: Colors.black87,
+                        color: textColor,
                       ),
                     ),
                   ),
@@ -206,53 +189,52 @@ Widget _bidangCard(BuildContext context, dynamic b) {
               ],
             ),
 
-            // RIGHT SIDE (edit, delete, arrow)
+            // KANAN (ADMIN ONLY)
             Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                  onPressed: () => _showEditDialog(context, b.id!, b.nama),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.redAccent),
-                  onPressed: () {
-                    Get.defaultDialog(
-                      title: "Hapus Bidang",
-                      middleText: "Yakin hapus \"${b.nama}\"?",
-                      textCancel: "Batal",
-                      textConfirm: "Hapus",
-                      confirmTextColor: Colors.white,
-                      onConfirm: () {
-                        controller.deleteBidang(b.id!);
-                        Get.back();
-                      },
-                    );
-                  },
-                ),
-
-                AnimatedOpacity(
-                  opacity: 0.8,
-                  duration: const Duration(milliseconds: 200),
-                  child: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: Colors.grey,
-                    size: 18,
+                if (isAdmin)
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                    onPressed: () => _showEditDialog(context, b.id!, b.nama),
                   ),
-                ),
+
+                if (isAdmin)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: () {
+                      Get.defaultDialog(
+                        title: "Hapus Bidang",
+                        middleText: "Yakin hapus \"${b.nama}\"?",
+                        textCancel: "Batal",
+                        textConfirm: "Hapus",
+                        confirmTextColor: Colors.white,
+                        onConfirm: () {
+                          controller.deleteBidang(b.id!);
+                          Get.back();
+                        },
+                      );
+                    },
+                  ),
+
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 18, color: Colors.grey),
               ],
             ),
           ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-  // ============================================================
-  //                        DIALOG TAMBAH
-  // ============================================================
+  // ===============================================================
+  // DIALOG TAMBAH (ADMIN ONLY)
+  // ===============================================================
   void _showAddDialog(BuildContext context) {
+    if (!auth.isAdmin) {
+      Get.snackbar("Akses Ditolak", "Hanya admin yang bisa menambah bidang");
+      return;
+    }
+
     final nameC = TextEditingController();
 
     Get.dialog(
@@ -267,7 +249,10 @@ Widget _bidangCard(BuildContext context, dynamic b) {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
             onPressed: () {
@@ -277,16 +262,21 @@ Widget _bidangCard(BuildContext context, dynamic b) {
               }
             },
             child: const Text("Simpan"),
-          ),
+          )
         ],
       ),
     );
   }
 
-  // ============================================================
-  //                        DIALOG EDIT
-  // ============================================================
+  // ===============================================================
+  // DIALOG EDIT (ADMIN ONLY)
+  // ===============================================================
   void _showEditDialog(BuildContext context, int id, String nama) {
+    if (!auth.isAdmin) {
+      Get.snackbar("Akses Ditolak", "Hanya admin yang bisa mengedit bidang");
+      return;
+    }
+
     final nameC = TextEditingController(text: nama);
 
     Get.dialog(
@@ -305,10 +295,8 @@ Widget _bidangCard(BuildContext context, dynamic b) {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
             onPressed: () {
-              if (nameC.text.isNotEmpty) {
-                controller.updateBidang(id, nameC.text);
-                Get.back();
-              }
+              controller.updateBidang(id, nameC.text);
+              Get.back();
             },
             child: const Text("Update"),
           ),

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/profile_controller.dart';
 import '../../../controllers/auth_controller.dart';
+import '../../../controllers/theme_controller.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -16,6 +17,7 @@ class _ProfileViewState extends State<ProfileView>
     with SingleTickerProviderStateMixin {
   final c = Get.put(ProfileController());
   final auth = Get.find<AuthController>();
+  final themeC = Get.find<ThemeController>();
 
   late AnimationController _animController;
   late Animation<double> _fadeContent;
@@ -56,38 +58,48 @@ class _ProfileViewState extends State<ProfileView>
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = Theme.of(context).colorScheme.background;
+    final textColor = Theme.of(context).colorScheme.onBackground;
+    final cardColor = Theme.of(context).cardColor;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F6),
+      backgroundColor: bgColor,
 
       body: Stack(
         children: [
-          // ================= GRADIENT HEADER (Selaras dengan lain) =================
+          // ================= GRADIENT HEADER =================
           Container(
             height: 300,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF009688),
-                  Color(0xFF4DB6AC),
-                  Color(0xFF80CBC4),
-                ],
+                colors: themeC.isDark
+                    ? const [
+                        Color(0xFF00332E),
+                        Color(0xFF002A26),
+                      ]
+                    : const [
+                        Color(0xFF009688),
+                        Color(0xFF4DB6AC),
+                        Color(0xFF80CBC4),
+                      ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(35),
                 bottomRight: Radius.circular(35),
               ),
             ),
           ),
 
-          // ================= BACK BUTTON =================
+          // ================= HEADER BAR =================
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.only(left: 16, top: 10, right: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // BACK BUTTON
                   GestureDetector(
                     onTap: () => Get.back(),
                     child: Container(
@@ -103,6 +115,8 @@ class _ProfileViewState extends State<ProfileView>
                       ),
                     ),
                   ),
+
+                  // TITLE
                   Text(
                     "Profil",
                     style: GoogleFonts.inter(
@@ -111,7 +125,23 @@ class _ProfileViewState extends State<ProfileView>
                       fontSize: 18,
                     ),
                   ),
-                  const SizedBox(width: 40), // biar title ke tengah secara visual
+
+                  // THEME TOGGLE
+                  GestureDetector(
+                    onTap: () => themeC.toggleTheme(),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.25),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        themeC.isDark ? Icons.dark_mode : Icons.light_mode,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -125,9 +155,9 @@ class _ProfileViewState extends State<ProfileView>
                 position: _slideContent,
                 child: Column(
                   children: [
-                    const SizedBox(height: 90),
+                    const SizedBox(height: 110),
 
-                    // ---------- FOTO PROFIL 3D ----------
+                    // ---------- FOTO PROFIL ----------
                     Center(
                       child: Container(
                         decoration: BoxDecoration(
@@ -191,13 +221,13 @@ class _ProfileViewState extends State<ProfileView>
 
                     const SizedBox(height: 35),
 
-                    // ================= GLASSMORPHIC CARD =================
+                    // ================= GLASS CARD =================
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 20),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 22, vertical: 26),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(26),
                         boxShadow: [
                           BoxShadow(
@@ -210,15 +240,16 @@ class _ProfileViewState extends State<ProfileView>
 
                       child: Column(
                         children: [
-                          _sectionTitle("Akun"),
+                          _sectionTitle("Akun", textColor),
 
                           _menuItem(
                             icon: Icons.person_outline,
                             title: "Edit Profil",
+                            colorText: textColor,
                             onTap: () {
                               Get.snackbar(
                                 "Info",
-                                "Fitur edit profil akan ditambahkan kemudian.",
+                                "Fitur edit profil akan ditambahkan.",
                                 snackPosition: SnackPosition.BOTTOM,
                                 backgroundColor: Colors.teal.shade50,
                                 colorText: Colors.teal.shade900,
@@ -229,18 +260,21 @@ class _ProfileViewState extends State<ProfileView>
                           _menuItem(
                             icon: Icons.lock_outline,
                             title: "Keamanan",
+                            colorText: textColor,
                             onTap: () {},
                           ),
 
                           _menuItem(
                             icon: Icons.notifications_none,
                             title: "Notifikasi",
+                            colorText: textColor,
                             onTap: () {},
                           ),
 
                           _menuItem(
                             icon: Icons.info_outline,
                             title: "Tentang Aplikasi",
+                            colorText: textColor,
                             onTap: () {},
                           ),
 
@@ -248,7 +282,7 @@ class _ProfileViewState extends State<ProfileView>
                           Divider(color: Colors.grey.shade300),
                           const SizedBox(height: 14),
 
-                          // ================= LOGOUT =================
+                          // LOGOUT
                           GestureDetector(
                             onTap: () => auth.logout(),
                             child: Row(
@@ -283,7 +317,7 @@ class _ProfileViewState extends State<ProfileView>
   }
 
   // ================= SECTION TITLE =================
-  Widget _sectionTitle(String title) {
+  Widget _sectionTitle(String title, Color textColor) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
@@ -292,7 +326,7 @@ class _ProfileViewState extends State<ProfileView>
           title,
           style: GoogleFonts.inter(
             fontSize: 17,
-            color: Colors.teal.shade800,
+            color: textColor,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -304,6 +338,7 @@ class _ProfileViewState extends State<ProfileView>
   Widget _menuItem({
     required IconData icon,
     required String title,
+    required Color colorText,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -316,7 +351,7 @@ class _ProfileViewState extends State<ProfileView>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.teal.withOpacity(0.12),
+                color: Colors.teal.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: Colors.teal.shade700, size: 22),
@@ -326,16 +361,13 @@ class _ProfileViewState extends State<ProfileView>
               title,
               style: GoogleFonts.inter(
                 fontSize: 16,
-                color: Colors.black87,
+                color: colorText,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const Spacer(),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 17,
-              color: Colors.black38,
-            )
+            Icon(Icons.arrow_forward_ios,
+                size: 17, color: colorText.withOpacity(0.45)),
           ],
         ),
       ),

@@ -75,13 +75,12 @@ class AppPages {
     ),
     // app_pages.dart
     GetPage(
-      name: Routes.Bidang,
+      name: Routes.BIDANG,
       page: () => BidangView(),
       binding: BindingsBuilder(() {
         Get.put(BidangControllerSupabase());
       }),
     ),
-
     // GetPage(
     //   name: '/test-supabase',
     //   page: () => const TestSupabasePage(),

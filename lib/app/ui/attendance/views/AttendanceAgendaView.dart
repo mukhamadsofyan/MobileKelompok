@@ -1,97 +1,166 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:get/get.dart';
+import 'package:orgtrack/app/controllers/theme_controller.dart';
 import 'package:orgtrack/app/ui/attendance/controllers/attendance_agenda.dart';
 import '../../../data/models/AgendaModel.dart';
 import '../../../routes/app_pages.dart';
 
-class AttendanceAgendaView extends StatelessWidget {
+class AttendanceAgendaView extends StatefulWidget {
+  @override
+  State<AttendanceAgendaView> createState() => _AttendanceAgendaViewState();
+}
+
+class _AttendanceAgendaViewState extends State<AttendanceAgendaView> {
   final AttendanceAgendaController agendaC =
       Get.find<AttendanceAgendaController>();
+  final themeC = Get.find<ThemeController>();
+
+  final searchCtrl = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    final colorBG = Theme.of(context).colorScheme.background;
+    final colorText = Theme.of(context).colorScheme.onBackground;
+    final colorCard = Theme.of(context).cardColor;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 180,
-            pinned: true,
-            backgroundColor: Colors.teal.shade600,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
-              title: const Text(
-                'Agenda Kehadiran',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
+      backgroundColor: colorBG,
+      body: Column(
+        children: [
+          // =====================================================
+          // HEADER PREMIUM (Seperti Struktur & Agenda Organisasi)
+          // =====================================================
+          Container(
+            padding: const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: themeC.isDark
+                    ? const [Color(0xFF00332E), Color(0xFF002A26)]
+                    : const [Color(0xFF009688), Color(0xFF4DB6AC), Color(0xFF80CBC4)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.teal.shade400, Colors.teal.shade800],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Align(
-                  alignment: Alignment.bottomRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Opacity(
-                      opacity: 0.3,
-                      child: Icon(
-                        Icons.event_available_rounded,
-                        size: 140,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(32),
+                bottomRight: Radius.circular(32),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(themeC.isDark ? 0.4 : 0.18),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+
+            child: Column(
+              children: [
+                // === HEADER ROW ===
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Get.back(),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white),
+                    ),
+
+                    const Text(
+                      "Agenda Kehadiran",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
                         color: Colors.white,
                       ),
                     ),
+
+                    IconButton(
+                      icon: Icon(
+                        themeC.isDark ? Icons.dark_mode : Icons.light_mode,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                      onPressed: () => themeC.toggleTheme(),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // === SEARCH BAR ===
+                Container(
+                  decoration: BoxDecoration(
+                    color: colorCard,
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+                  ),
+                  child: TextField(
+                    controller: searchCtrl,
+                    onChanged: (_) => setState(() {}),
+                    style: TextStyle(color: colorText),
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.search,
+                          color: colorText.withOpacity(0.6)),
+                      hintText: "Cari agenda...",
+                      hintStyle: TextStyle(color: colorText.withOpacity(0.5)),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
 
-          // ================= LIST =================
-          SliverToBoxAdapter(
-            child: Obx(() {
-              // DEBUG optional
-              print("DEBUG agendas length: ${agendaC.agendaList.length}");
-              print("DEBUG loading: ${agendaC.loading.value}");
+          const SizedBox(height: 10),
 
+          // =====================================================
+          // LIST AGENDAS
+          // =====================================================
+          Expanded(
+            child: Obx(() {
               if (agendaC.loading.value) {
-                return const Padding(
-                  padding: EdgeInsets.only(top: 100),
-                  child: Center(
-                    child: CircularProgressIndicator(color: Colors.teal),
-                  ),
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.teal),
                 );
               }
 
-              if (agendaC.agendaList.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.only(top: 100),
-                  child: Center(
-                    child: Text(
-                      "Belum ada agenda",
-                      style: TextStyle(fontSize: 16),
-                    ),
+              var list = agendaC.agendaList.where((a) =>
+                  a.title.toLowerCase().contains(searchCtrl.text.toLowerCase()))
+                  .toList();
+
+              if (list.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.calendar_today_outlined,
+                          size: 90, color: Colors.teal.shade200),
+                      const SizedBox(height: 10),
+                      Text("Tidak ada agenda ditemukan",
+                          style: TextStyle(fontSize: 16, color: colorText)),
+                    ],
                   ),
                 );
               }
 
               return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
-                itemCount: agendaC.agendaList.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  final agenda = agendaC.agendaList[index];
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 90),
+                itemCount: list.length,
+                itemBuilder: (_, i) {
+                  final agenda = list[i];
                   return _AnimatedAgendaCard(
-                    index: index,
+                    index: i,
                     agenda: agenda,
+                    colorText: colorText,
+                    cardColor: colorCard,
                   );
                 },
               );
@@ -100,15 +169,15 @@ class AttendanceAgendaView extends StatelessWidget {
         ],
       ),
 
+      // =====================================================
+      // FAB REFRESH
+      // =====================================================
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => agendaC.loadAgenda(),
         backgroundColor: Colors.teal.shade700,
         elevation: 8,
         icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-        label: const Text(
-          "Muat Ulang",
-          style: TextStyle(color: Colors.white),
-        ),
+        label: const Text("Muat Ulang", style: TextStyle(color: Colors.white)),
       ),
 
       bottomNavigationBar: const _FooterHint(),
@@ -116,13 +185,26 @@ class AttendanceAgendaView extends StatelessWidget {
   }
 }
 
+
+
+
+
+
+
+// =============================================================
+// ANIMATED CARD (Dipertahankan, UI dipoles)
+// =============================================================
 class _AnimatedAgendaCard extends StatefulWidget {
   final int index;
   final AgendaOrganisasi agenda;
+  final Color colorText;
+  final Color cardColor;
 
   const _AnimatedAgendaCard({
     required this.index,
     required this.agenda,
+    required this.colorText,
+    required this.cardColor,
   });
 
   @override
@@ -138,26 +220,21 @@ class _AnimatedAgendaCardState extends State<_AnimatedAgendaCard>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 550));
 
     _scaleAnimation =
         CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
     _fadeAnimation =
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic);
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
 
-    Future.delayed(Duration(milliseconds: 100 * widget.index), () {
+    Future.delayed(Duration(milliseconds: 70 * widget.index), () {
       if (mounted) _controller.forward();
     });
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  void dispose() => _controller.dispose();
 
   @override
   Widget build(BuildContext context) {
@@ -169,76 +246,67 @@ class _AnimatedAgendaCardState extends State<_AnimatedAgendaCard>
         scale: _scaleAnimation,
         child: GestureDetector(
           onTap: () => Get.toNamed(Routes.ATTENDANCE, arguments: agenda),
+
           child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 12),
+            margin: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                colors: [Colors.white, Colors.grey.shade100],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: widget.cardColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.teal.withOpacity(0.08),
+                  color: Colors.teal.withOpacity(0.10),
                   blurRadius: 10,
                   offset: const Offset(2, 6),
                 ),
               ],
             ),
+
             child: ListTile(
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+
               leading: Hero(
-                tag: 'agenda_${agenda.title}_${widget.index}',
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Colors.teal.shade400, Colors.teal.shade700],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      agenda.title[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                tag: "agenda_${agenda.title}_${widget.index}",
+                child: CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.teal.shade100.withOpacity(0.7),
+                  child: Text(
+                    agenda.title[0].toUpperCase(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal,
+                      fontSize: 22,
                     ),
                   ),
                 ),
               ),
+
               title: Text(
                 agenda.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
+                style: TextStyle(
+                  color: widget.colorText,
                   fontSize: 17,
-                  color: Colors.black87,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+
               subtitle: Padding(
-                padding: const EdgeInsets.only(top: 4.0),
+                padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   agenda.description ?? "Tidak ada deskripsi",
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 13.5,
-                    height: 1.4,
-                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: widget.colorText.withOpacity(0.6),
+                    fontSize: 13.5,
+                  ),
                 ),
               ),
+
               trailing: Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: Colors.teal.shade400,
-                size: 18,
+                color: Colors.teal.shade300,
+                size: 20,
               ),
             ),
           ),
@@ -248,11 +316,22 @@ class _AnimatedAgendaCardState extends State<_AnimatedAgendaCard>
   }
 }
 
+
+
+
+
+
+
+// =============================================================
+// FOOTER HINT
+// =============================================================
 class _FooterHint extends StatelessWidget {
   const _FooterHint();
 
   @override
   Widget build(BuildContext context) {
+    final themeC = Get.find<ThemeController>();
+
     return Container(
       height: 64,
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -263,19 +342,16 @@ class _FooterHint extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Colors.white.withOpacity(0.85),
-                  Colors.white.withOpacity(0.95),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: themeC.isDark
+                    ? [Colors.black54, Colors.black45]
+                    : [Colors.white.withOpacity(0.85), Colors.white.withOpacity(0.95)],
               ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.info_outline_rounded,
-                    color: Colors.teal.shade700, size: 22),
+                    color: Colors.teal.shade700),
                 const SizedBox(width: 10),
                 Text(
                   'Pilih agenda untuk mulai absensi',
@@ -283,7 +359,6 @@ class _FooterHint extends StatelessWidget {
                     color: Colors.teal.shade700,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    letterSpacing: 0.3,
                   ),
                 ),
               ],

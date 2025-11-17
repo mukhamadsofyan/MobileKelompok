@@ -6,9 +6,9 @@ import '../controllers/program_kerja_mode.dart';
 class ProgramKerjaBinding extends Bindings {
   @override
   void dependencies() {
-    // Jika controller belum diinisialisasi, akan dipasang
-    Get.lazyPut<ProgramControllerHttp>(() => ProgramControllerHttp());
-    Get.lazyPut<ProgramControllerDio>(() => ProgramControllerDio());
-    Get.lazyPut<ModeController>(() => ModeController());
+    Get.put(ProgramControllerHttp());
+    Get.put(ProgramControllerDio());
+    Get.put(ModeController());
   }
 }
+

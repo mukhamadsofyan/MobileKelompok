@@ -1,77 +1,243 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:orgtrack/app/controllers/auth_controller.dart';
+import 'package:orgtrack/app/controllers/theme_controller.dart';
 import '../controllers/laporan_controller.dart';
 
-class LaporanView extends GetView<LaporanController> {
+class LaporanView extends StatefulWidget {
   const LaporanView({super.key});
 
   @override
+  State<LaporanView> createState() => _LaporanViewState();
+}
+
+class _LaporanViewState extends State<LaporanView> {
+  final auth = Get.find<AuthController>();
+  final themeC = Get.find<ThemeController>();
+  final c = Get.find<LaporanController>();
+
+  final searchC = TextEditingController();
+
+  @override
   Widget build(BuildContext context) {
+    final colorBG = Theme.of(context).colorScheme.background;
+    final colorText = Theme.of(context).colorScheme.onBackground;
+    final cardColor = Theme.of(context).cardColor;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Laporan Organisasi'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Obx(() {
-          if (controller.reports.isEmpty) {
-            return const Center(child: Text('Belum ada laporan.'));
-          }
+      backgroundColor: colorBG,
 
-          return ListView.builder(
-            itemCount: controller.reports.length,
-            itemBuilder: (context, index) {
-              final report = controller.reports[index];
+      // ============================================================
+      // HEADER PREMIUM SERAGAM
+      // ============================================================
+      body: Column(
+        children: [
+          Container(
+            padding:
+                const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: themeC.isDark
+                    ? const [Color(0xFF00332E), Color(0xFF002A26)]
+                    : const [Color(0xFF3F51B5), Color(0xFF5C6BC0)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(32),
+                bottomRight: Radius.circular(32),
+              ),
+            ),
 
-              return Card(
-                child: ListTile(
-                  title: Text(report.judul),
-                  subtitle: Text(report.tanggal),
+            child: Column(
+              children: [
+                // ROW HEADER
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Get.back(),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white),
+                    ),
 
-                  // EDIT
-                  onTap: () => _showEditDialog(context, index, report),
+                    const Text(
+                      "Laporan Organisasi",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
 
-                  // DELETE
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => controller.hapusLaporan(index),
+                    IconButton(
+                      icon: Icon(
+                        themeC.isDark ? Icons.dark_mode : Icons.light_mode,
+                        color: Colors.white,
+                      ),
+                      onPressed: () => themeC.toggleTheme(),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // SEARCH BAR
+                Container(
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      )
+                    ],
+                  ),
+                  child: TextField(
+                    controller: searchC,
+                    onChanged: (_) => setState(() {}),
+                    style: TextStyle(color: colorText),
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.search,
+                          color: colorText.withOpacity(0.6)),
+                      hintText: "Cari laporan...",
+                      hintStyle: TextStyle(color: colorText.withOpacity(0.5)),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 14),
+                    ),
                   ),
                 ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // ============================================================
+          // LIST REPORT
+          // ============================================================
+          Expanded(
+            child: Obx(() {
+              var list = c.reports
+                  .where((r) => r.judul
+                      .toLowerCase()
+                      .contains(searchC.text.toLowerCase()))
+                  .toList();
+
+              if (list.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.insert_drive_file_rounded,
+                          size: 90, color: Colors.indigo.shade200),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Belum ada laporan",
+                        style: TextStyle(
+                            fontSize: 16, color: colorText.withOpacity(0.7)),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 100),
+                itemCount: list.length,
+                itemBuilder: (context, index) {
+                  final report = list[index];
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      leading: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: Colors.indigo.shade100,
+                        child: const Icon(Icons.description_rounded,
+                            color: Colors.indigo),
+                      ),
+                      title: Text(
+                        report.judul,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: colorText,
+                        ),
+                      ),
+                      subtitle: Text(
+                        report.tanggal,
+                        style: TextStyle(
+                          color: colorText.withOpacity(0.6),
+                          fontSize: 13,
+                        ),
+                      ),
+
+                      // EDIT — ONLY ADMIN
+                      onTap: auth.isAdmin
+                          ? () => _showEditDialog(context, index, report)
+                          : null,
+
+                      trailing: auth.isAdmin
+                          ? IconButton(
+                              icon: const Icon(Icons.delete,
+                                  color: Colors.redAccent),
+                              onPressed: () => c.hapusLaporan(index),
+                            )
+                          : null,
+                    ),
+                  );
+                },
               );
-            },
-          );
-        }),
+            }),
+          ),
+        ],
       ),
 
-      // ADD
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.indigo,
-        child: const Icon(Icons.add),
-        onPressed: () => _showAddDialog(context),
-      ),
+      // ============================================================
+      // FAB ADMIN ONLY
+      // ============================================================
+      floatingActionButton: auth.isAdmin
+          ? FloatingActionButton.extended(
+              backgroundColor: Colors.indigo,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text("Tambah", style: TextStyle(color: Colors.white)),
+              onPressed: () => _showAddDialog(context),
+            )
+          : null,
     );
   }
 
-  // ========================================================
-  //                 POPUP TAMBAH LAPORAN
-  // ========================================================
+  // =======================================================================================
+  // POPUP TAMBAH
+  // =======================================================================================
   void _showAddDialog(BuildContext context) {
     final judulCtrl = TextEditingController();
     final tanggalCtrl = TextEditingController(
-      text: DateTime.now().toIso8601String().split("T").first,
-    );
+        text: DateTime.now().toIso8601String().split("T").first);
 
-    // fungsi pilih tanggal
     Future<void> pilihTanggal() async {
-      final DateTime? picked = await showDatePicker(
+      final picked = await showDatePicker(
         context: context,
         initialDate: DateTime.now(),
         firstDate: DateTime(2020),
         lastDate: DateTime(2100),
       );
-
       if (picked != null) {
         tanggalCtrl.text = picked.toIso8601String().split("T").first;
       }
@@ -92,7 +258,7 @@ class LaporanView extends GetView<LaporanController> {
               labelText: "Tanggal",
               suffixIcon: Icon(Icons.calendar_today),
             ),
-            onTap: pilihTanggal,
+            onTap: () => pilihTanggal(),
           ),
         ],
       ),
@@ -100,28 +266,27 @@ class LaporanView extends GetView<LaporanController> {
       textCancel: "Batal",
       onConfirm: () {
         if (judulCtrl.text.isNotEmpty) {
-          controller.tambahLaporan(judulCtrl.text, tanggalCtrl.text);
+          c.tambahLaporan(judulCtrl.text, tanggalCtrl.text);
           Get.back();
         }
       },
     );
   }
 
-  // ========================================================
-  //                    POPUP EDIT LAPORAN
-  // ========================================================
+  // =======================================================================================
+  // POPUP EDIT
+  // =======================================================================================
   void _showEditDialog(BuildContext context, int index, report) {
     final judulCtrl = TextEditingController(text: report.judul);
     final tanggalCtrl = TextEditingController(text: report.tanggal);
 
     Future<void> pilihTanggal() async {
-      final DateTime? picked = await showDatePicker(
+      final picked = await showDatePicker(
         context: context,
         initialDate: DateTime.tryParse(report.tanggal) ?? DateTime.now(),
         firstDate: DateTime(2020),
         lastDate: DateTime(2100),
       );
-
       if (picked != null) {
         tanggalCtrl.text = picked.toIso8601String().split("T").first;
       }
@@ -142,7 +307,7 @@ class LaporanView extends GetView<LaporanController> {
               labelText: "Tanggal",
               suffixIcon: Icon(Icons.calendar_today),
             ),
-            onTap: pilihTanggal,
+            onTap: () => pilihTanggal(),
           ),
         ],
       ),
@@ -150,7 +315,7 @@ class LaporanView extends GetView<LaporanController> {
       textCancel: "Batal",
       onConfirm: () {
         if (judulCtrl.text.isNotEmpty) {
-          controller.editLaporan(index, judulCtrl.text, tanggalCtrl.text);
+          c.editLaporan(index, judulCtrl.text, tanggalCtrl.text);
           Get.back();
         }
       },

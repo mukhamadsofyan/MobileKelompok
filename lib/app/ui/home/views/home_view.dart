@@ -238,7 +238,7 @@ class _HomeViewState extends State<HomeView>
       children: [
         _menuButton(context, Icons.assignment, 'Program Kerja', Colors.teal,
             () {
-          Get.toNamed(Routes.Bidang);
+          Get.toNamed(Routes.BIDANG);
         }),
         _menuButton(context, Icons.event, 'Agenda', Colors.cyan, () {
           Get.toNamed(Routes.AGENDA_ORGANISASI);

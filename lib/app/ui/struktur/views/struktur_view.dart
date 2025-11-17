@@ -3,9 +3,11 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+
 import '../../../data/models/StrukturalModel.dart';
 import '../controllers/struktur_controller.dart';
 import '../../../controllers/auth_controller.dart';
+import 'package:orgtrack/app/controllers/theme_controller.dart';
 
 class StrukturKabinetView extends StatefulWidget {
   const StrukturKabinetView({super.key});
@@ -32,24 +34,34 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
   @override
   Widget build(BuildContext context) {
     final auth = Get.find<AuthController>(); // akses admin
+    final themeC = Get.find<ThemeController>();
+
+    final colorBG = Theme.of(context).colorScheme.background;
+    final colorText = Theme.of(context).colorScheme.onBackground;
+    final cardColor = Theme.of(context).cardColor;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F6),
-
+      backgroundColor: colorBG,
       body: Column(
         children: [
           // ==================== HEADER GRADIENT ====================
           Container(
             padding: const EdgeInsets.only(top: 45, left: 20, right: 20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF009688),
-                  Color(0xFF4DB6AC),
-                  Color(0xFF80CBC4),
-                ],
+                colors: themeC.isDark
+                    ? const [
+                        Color(0xFF00332E),
+                        Color(0xFF004D40),
+                        Color(0xFF003E39),
+                      ]
+                    : const [
+                        Color(0xFF009688),
+                        Color(0xFF4DB6AC),
+                        Color(0xFF80CBC4),
+                      ],
               ),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(32),
@@ -57,7 +69,7 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.18),
+                  color: Colors.black.withOpacity(themeC.isDark ? 0.4 : 0.18),
                   blurRadius: 12,
                   offset: const Offset(0, 3),
                 ),
@@ -65,12 +77,16 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
             ),
             child: Column(
               children: [
+                // ==================== TOP BAR ====================
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white, size: 22),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                       onPressed: () => Get.back(),
                     ),
                     Text(
@@ -81,25 +97,45 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.filter_alt_rounded,
-                          color: Colors.white),
-                      onSelected: (value) {
-                        if (value == 'jabatan') {
-                          c.list.sort((a, b) => _jabatanLevel(b.role)
-                              .compareTo(_jabatanLevel(a.role)));
-                        } else if (value == 'terbaru') {
-                          c.list.sort((a, b) => b.id!.compareTo(a.id!));
-                        } else if (value == 'terlama') {
-                          c.list.sort((a, b) => a.id!.compareTo(b.id!));
-                        }
-                        setState(() {});
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(
-                            value: 'jabatan', child: Text("Jabatan Tertinggi")),
-                        PopupMenuItem(value: 'terbaru', child: Text("Terbaru")),
-                        PopupMenuItem(value: 'terlama', child: Text("Terlama")),
+                    Row(
+                      children: [
+                        // ====== TOGGLE THEME ======
+                        IconButton(
+                          icon: Icon(
+                            themeC.isDark ? Icons.dark_mode : Icons.light_mode,
+                            color: Colors.white,
+                            size: 26,
+                          ),
+                          onPressed: () => themeC.toggleTheme(),
+                        ),
+
+                        // ====== FILTER MENU ======
+                        PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.filter_alt_rounded,
+                            color: Colors.white,
+                          ),
+                          onSelected: (value) {
+                            if (value == 'jabatan') {
+                              c.list.sort((a, b) => _jabatanLevel(b.role)
+                                  .compareTo(_jabatanLevel(a.role)));
+                            } else if (value == 'terbaru') {
+                              c.list.sort((a, b) => b.id!.compareTo(a.id!));
+                            } else if (value == 'terlama') {
+                              c.list.sort((a, b) => a.id!.compareTo(b.id!));
+                            }
+                            setState(() {});
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                                value: 'jabatan',
+                                child: Text("Jabatan Tertinggi")),
+                            PopupMenuItem(
+                                value: 'terbaru', child: Text("Terbaru")),
+                            PopupMenuItem(
+                                value: 'terlama', child: Text("Terlama")),
+                          ],
+                        ),
                       ],
                     ),
                   ],
@@ -107,14 +143,15 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
 
                 const SizedBox(height: 20),
 
-                // ============== SEARCH BAR CLEAN ==============
+                // ============== SEARCH BAR CLEAN (IKUT TEMA) ==============
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cardColor,
                     borderRadius: BorderRadius.circular(26),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
+                        color: Colors.black
+                            .withOpacity(themeC.isDark ? 0.5 : 0.12),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       )
@@ -123,13 +160,19 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                   child: TextField(
                     onChanged: (value) =>
                         setState(() => query = value.toLowerCase()),
+                    style: TextStyle(color: colorText),
                     decoration: InputDecoration(
                       hintText: "Cari anggota kabinet...",
-                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      prefixIcon:
+                          Icon(Icons.search, color: colorText.withOpacity(0.6)),
                       border: InputBorder.none,
-                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      hintStyle: TextStyle(
+                        color: colorText.withOpacity(0.5),
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 14),
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                 ),
@@ -157,7 +200,7 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     "Tidak ada anggota ditemukan",
                     style: GoogleFonts.poppins(
                       fontSize: 16,
-                      color: Colors.grey.shade600,
+                      color: colorText.withOpacity(0.6),
                     ),
                   ),
                 );
@@ -182,17 +225,20 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.white,
-                              Colors.teal.shade50,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: themeC.isDark ? cardColor : null,
+                          gradient: themeC.isDark
+                              ? null
+                              : LinearGradient(
+                                  colors: [
+                                    Colors.white,
+                                    Colors.teal.shade50,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.teal.withOpacity(0.15),
+                              color: colorText.withOpacity(0.15),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
                             ),
@@ -203,13 +249,17 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                           children: [
                             CircleAvatar(
                               radius: 34,
-                              backgroundColor: Colors.teal.shade100,
+                              backgroundColor: themeC.isDark
+                                  ? Colors.teal.shade900.withOpacity(0.45)
+                                  : Colors.teal.shade100,
                               child: Text(
                                 s.name[0].toUpperCase(),
                                 style: GoogleFonts.poppins(
                                   fontSize: 26,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.teal.shade700,
+                                  color: themeC.isDark
+                                      ? Colors.teal.shade200
+                                      : Colors.teal.shade700,
                                 ),
                               ),
                             ),
@@ -219,14 +269,16 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                               textAlign: TextAlign.center,
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.teal.shade900,
+                                color: colorText,
                                 fontSize: 16,
                               ),
                             ),
                             Text(
                               s.role,
                               style: GoogleFonts.poppins(
-                                color: Colors.teal.shade700,
+                                color: themeC.isDark
+                                    ? Colors.teal.shade200
+                                    : Colors.teal.shade700,
                                 fontSize: 13,
                               ),
                             ),
@@ -243,9 +295,9 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
       ),
 
       // ============== FAB ONLY ADMIN ==============
-      floatingActionButton: Get.find<AuthController>().isAdmin
+      floatingActionButton: auth.isAdmin
           ? FloatingActionButton.extended(
-              backgroundColor: Colors.teal.shade700,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
                 "Tambah",
@@ -260,12 +312,17 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
   // ==================== DETAIL QR ====================
   void _showDetailFull(Struktural s) {
     final qrData = "ANGGOTA|${s.id}|${s.name}|${s.role}";
+    final themeC = Get.find<ThemeController>();
+    final context = Get.context!;
+    final colorBG = Theme.of(context).colorScheme.background;
+    final colorText = Theme.of(context).colorScheme.onBackground;
 
     Get.to(() => Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: colorBG,
           appBar: AppBar(
             title: Text("Detail Anggota", style: GoogleFonts.poppins()),
-            backgroundColor: Colors.teal.shade700,
+            backgroundColor:
+                themeC.isDark ? Colors.teal.shade900 : Colors.teal.shade700,
             foregroundColor: Colors.white,
             centerTitle: true,
           ),
@@ -279,13 +336,17 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                   // FOTO / INITIAL
                   CircleAvatar(
                     radius: 70,
-                    backgroundColor: Colors.teal.shade100,
+                    backgroundColor: themeC.isDark
+                        ? Colors.teal.shade900.withOpacity(0.45)
+                        : Colors.teal.shade100,
                     child: Text(
                       s.name[0].toUpperCase(),
                       style: GoogleFonts.poppins(
                         fontSize: 42,
                         fontWeight: FontWeight.bold,
-                        color: Colors.teal.shade800,
+                        color: themeC.isDark
+                            ? Colors.teal.shade200
+                            : Colors.teal.shade800,
                       ),
                     ),
                   ),
@@ -299,7 +360,7 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
-                      color: Colors.teal.shade900,
+                      color: colorText,
                     ),
                   ),
 
@@ -311,7 +372,9 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
-                      color: Colors.teal.shade600,
+                      color: themeC.isDark
+                          ? Colors.teal.shade200
+                          : Colors.teal.shade600,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -325,11 +388,15 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     size: 200,
                     eyeStyle: QrEyeStyle(
                       eyeShape: QrEyeShape.circle,
-                      color: Colors.teal.shade700,
+                      color: themeC.isDark
+                          ? Colors.teal.shade200
+                          : Colors.teal.shade700,
                     ),
                     dataModuleStyle: QrDataModuleStyle(
                       dataModuleShape: QrDataModuleShape.circle,
-                      color: Colors.teal.shade700,
+                      color: themeC.isDark
+                          ? Colors.teal.shade200
+                          : Colors.teal.shade700,
                     ),
                   ),
 
@@ -355,6 +422,10 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
   // ==================== DIALOG TAMBAH/EDIT ====================
   void _showDialog(BuildContext context, StrukturalController c,
       [Struktural? s]) {
+    final themeC = Get.find<ThemeController>();
+    final cardColor = Theme.of(context).cardColor;
+    final colorText = Theme.of(context).colorScheme.onBackground;
+
     final nameC = TextEditingController(text: s?.name ?? '');
     String selectedRole = s?.role ?? 'Anggota';
 
@@ -370,6 +441,7 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
       context: context,
       builder: (ctx) {
         return Dialog(
+          backgroundColor: cardColor,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           child: Padding(
@@ -382,7 +454,9 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.teal.shade800,
+                    color: themeC.isDark
+                        ? Colors.teal.shade200
+                        : Colors.teal.shade800,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -390,11 +464,15 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                 // NAMA
                 TextField(
                   controller: nameC,
+                  style: TextStyle(color: colorText),
                   decoration: InputDecoration(
                     labelText: "Nama",
-                    prefixIcon: const Icon(Icons.person_outline),
+                    labelStyle: TextStyle(color: colorText.withOpacity(0.7)),
+                    prefixIcon: Icon(Icons.person_outline,
+                        color: colorText.withOpacity(0.7)),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
 
@@ -402,11 +480,15 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
 
                 DropdownButtonFormField(
                   value: selectedRole,
+                  dropdownColor: cardColor,
                   decoration: InputDecoration(
                     labelText: "Jabatan",
-                    prefixIcon: const Icon(Icons.badge_outlined),
+                    labelStyle: TextStyle(color: colorText.withOpacity(0.7)),
+                    prefixIcon: Icon(Icons.badge_outlined,
+                        color: colorText.withOpacity(0.7)),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   items: roles
                       .map((role) =>
@@ -421,6 +503,15 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorText,
+                          side: BorderSide(
+                            color: colorText.withOpacity(0.4),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
                         onPressed: () => Get.back(),
                         child: const Text("Batal"),
                       ),
@@ -429,18 +520,23 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal.shade700,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         onPressed: () async {
                           final name = nameC.text.trim();
 
                           if (name.isEmpty) {
                             Get.snackbar(
-                                "Peringatan", "Nama tidak boleh kosong",
-                                backgroundColor: Colors.orange.shade100,
-                                colorText: Colors.orange.shade800);
+                              "Peringatan",
+                              "Nama tidak boleh kosong",
+                              backgroundColor: Colors.orange.shade100
+                                  .withOpacity(themeC.isDark ? 0.2 : 1),
+                              colorText: Colors.orange.shade800,
+                            );
                             return;
                           }
 
@@ -448,14 +544,19 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                             await c.addStruktural(name, selectedRole);
                           } else {
                             await c.updateStruktural(Struktural(
-                                id: s.id, name: name, role: selectedRole));
+                              id: s.id,
+                              name: name,
+                              role: selectedRole,
+                            ));
                           }
 
                           await c.loadAll();
                           Get.back();
                         },
-                        child: const Text("Simpan",
-                            style: TextStyle(color: Colors.white)),
+                        child: const Text(
+                          "Simpan",
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   ],

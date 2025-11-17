@@ -12,11 +12,10 @@ abstract class Routes {
   static const ATTENDANCE_AGENDA = '/attendance_agenda';
   static const VISI_MISI = '/visi_misi';
   static const NOTIFIKASI = '/notifikasi';
-  static const Bidang = '/bidang';
+  static const BIDANG = '/bidang';
   static const TEST_SUPABASE = '/test-supabase';
   static const LOGIN = '/login';
   static const REGISTER = '/register';
   static const WELCOME = '/welcome';
   static const PROFILE = '/profile';
 }
-
