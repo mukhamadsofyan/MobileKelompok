@@ -1,50 +1,23 @@
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
-import 'package:orgtrack/app/data/models/fetch_record.dart';
-import 'package:orgtrack/app/data/models/program_kerja_api.dart';
-import 'dart:convert';
+import 'package:orgtrack/app/data/db/db_helper.dart';
+import 'package:orgtrack/app/data/models/program_kerja.dart';
 
-class ProgramControllerHttp extends GetxController {
-  final base = 'https://api-production-a54a.up.railway.app/api/programKerja'; // ganti dengan API kamu jika beda
-  var programList = <Programker>[].obs;
-  var loadingProgram = false.obs;
-  var lastFetchMs = 0.obs;
-  var fetchHistory = <int>[].obs;
-  var records = <FetchRecord>[].obs;
+class ProgramKerjaSupabaseController extends GetxController {
+  final SupabaseDB db = SupabaseDB();
 
-  int get averageFetchMs =>
-      fetchHistory.isEmpty ? 0 : (fetchHistory.reduce((a, b) => a + b) ~/ fetchHistory.length);
+  var loading = false.obs;
+  var programList = <ProgramKerja>[].obs;
 
-  Future<void> fetchProgramByBidang(int bidangId) async {
-    loadingProgram.value = true;
-    final sw = DateTime.now();
-
+  Future<void> fetchProgramKerja(int bidangId) async {
     try {
-      // Panggil API
-      final res = await http.get(Uri.parse('$base/$bidangId'));
+      loading.value = true;
 
-      // Cek statusCode
-      if (res.statusCode == 200) {
-        final List data = jsonDecode(res.body);
-        programList.assignAll(data.map((e) => Programker.fromMap(e)).toList());
-      } else {
-        Get.snackbar('Error', 'HTTP error: ${res.statusCode}');
-      }
+      final data = await db.getProgramKerja(bidangId: bidangId);
+      programList.assignAll(data);
     } catch (e) {
-      Get.snackbar('Error', 'Terjadi kesalahan HTTP: $e');
+      Get.snackbar("Error", "$e");
     } finally {
-      // Hitung waktu fetch
-      lastFetchMs.value = DateTime.now().difference(sw).inMilliseconds;
-      fetchHistory.add(lastFetchMs.value);
-      loadingProgram.value = false;
-
-      // Tambahkan record history
-      records.add(FetchRecord(
-        endpoint: '/api/programKerja/$bidangId',
-        lastMs: lastFetchMs.value,
-        averageMs: averageFetchMs,
-        mode: 'HTTP',
-      ));
+      loading.value = false;
     }
   }
 }

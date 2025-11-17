@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:orgtrack/app/data/models/laporanModel.dart';
+import 'package:orgtrack/app/ui/programkerja/controllers/programkerja_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -45,7 +46,6 @@ Future<void> main() async {
   //            INIT HIVE
   // ================================
   await Hive.initFlutter();
-
   Hive.registerAdapter(ReportAdapter());
   await Hive.openBox<Report>('reportsBox');
 
@@ -60,9 +60,14 @@ Future<void> main() async {
   // ================================
   //      GLOBAL CONTROLLERS
   // ================================
-  Get.put(AgendaController());
-  Get.put(AuthController());
-  Get.put(ThemeController());
+  Get.put(AgendaController(), permanent: true);
+  Get.put(AuthController(), permanent: true);
+  Get.put(ThemeController(), permanent: true);
+
+  // ================================
+  //   WAJIB UNTUK PROGRAM KERJA
+  // ================================
+  Get.put(ProgramKerjaSupabaseController(), permanent: true);
 
   runApp(const OrgTrackApp());
 }
@@ -77,17 +82,19 @@ class OrgTrackApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeC = Get.find<ThemeController>();
 
-    return Obx(() => GetMaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: "OrgTrack",
+    return Obx(
+      () => GetMaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: "OrgTrack",
 
-          initialRoute: Routes.WELCOME,
-          getPages: AppPages.routes,
+        initialRoute: Routes.WELCOME,
+        getPages: AppPages.routes,
 
-          // THEME SYSTEM
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: themeC.isDark ? ThemeMode.dark : ThemeMode.light,
-        ));
+        // THEME SYSTEM
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: themeC.isDark ? ThemeMode.dark : ThemeMode.light,
+      ),
+    );
   }
 }

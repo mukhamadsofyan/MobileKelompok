@@ -11,6 +11,8 @@ import 'package:orgtrack/app/ui/notifikasi/bindings/notifikasi_binding.dart';
 import 'package:orgtrack/app/ui/notifikasi/views/notifikasi_view.dart';
 import 'package:orgtrack/app/ui/profile/controllers/profile_controller.dart';
 import 'package:orgtrack/app/ui/profile/views/profile_view.dart';
+import 'package:orgtrack/app/ui/programkerja/bindings/programkerja_binding.dart';
+import 'package:orgtrack/app/ui/programkerja/views/programkerja_view.dart';
 import 'package:orgtrack/app/ui/register/views/registerview.dart';
 import 'package:orgtrack/app/ui/visimisi/bindings/visi_misi_binding.dart';
 import 'package:orgtrack/app/ui/visimisi/views/visi_misi_view.dart';
@@ -58,6 +60,18 @@ class AppPages {
       page: () => const DokumentasiView(),
       binding: DokumentasiBinding(),
     ),
+    GetPage(
+      name: Routes.PROGRAMKERJA,
+      page: () {
+        final id = int.parse(Get.parameters['id']!);
+        final name = Get.parameters['name']!;
+        return ProgramKerjaView(
+          bidangId: id,
+          bidangName: name,
+        );
+      },
+    ),
+
     GetPage(
       name: '/agenda_organisasi',
       page: () => const AgendaView(),

@@ -213,4 +213,5 @@ class SupabaseDB {
   Future<dynamic> deleteAttendanceByAgenda(int agendaId) async {
     return await supabase.from('attendance').delete().eq('agenda_id', agendaId);
   }
+  
 }
