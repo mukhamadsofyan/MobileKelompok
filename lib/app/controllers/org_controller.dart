@@ -10,7 +10,7 @@ class OrgController extends GetxController {
   var loading = false.obs;
 
   // === Data Bidang ===
-  var bidangList = <BidangMo>[].obs;
+  var bidangList = <BidangModel>[].obs;
   var loadingBidang = false.obs;
 
   // === FIX: Tambahkan agendaList agar HomeView tidak error ===
@@ -27,7 +27,7 @@ class OrgController extends GetxController {
   //        BIDANG
   // ================================
   Future<void> fetchBidang() async {
-    loading.value = true;
+    loadingBidang.value = true;
 
     try {
       final response = await db.supabase
@@ -35,8 +35,8 @@ class OrgController extends GetxController {
           .select()
           .order('id', ascending: true);
 
-      final list = response
-          .map((e) => BidangMo.fromMap(e))
+      final list = (response as List)
+          .map((e) => BidangModel.fromMap(e as Map<String, dynamic>))
           .toList();
 
       bidangList.assignAll(list);
@@ -47,7 +47,7 @@ class OrgController extends GetxController {
         snackPosition: SnackPosition.TOP,
       );
     } finally {
-      loading.value = false;
+      loadingBidang.value = false;
     }
   }
 

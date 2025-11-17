@@ -4,6 +4,7 @@ import 'package:orgtrack/app/ui/agenda/bindings/agenda_binding.dart';
 import 'package:orgtrack/app/ui/agenda/views/agenda_view.dart';
 import 'package:orgtrack/app/ui/attendance/bindings/binding_agenda.dart';
 import 'package:orgtrack/app/ui/attendance/views/AttendanceAgendaView.dart';
+import 'package:orgtrack/app/ui/bidang/controllers/bidang_controller.dart';
 import 'package:orgtrack/app/ui/bidang/views/bidang_view.dart';
 import 'package:orgtrack/app/ui/home/welcome/welcome.dart';
 import 'package:orgtrack/app/ui/notifikasi/bindings/notifikasi_binding.dart';
@@ -73,7 +74,14 @@ class AppPages {
       binding: NotifikasiBinding(),
     ),
     // app_pages.dart
-    GetPage(name: Routes.Bidang, page: () => const BidangView()),
+    GetPage(
+      name: Routes.Bidang,
+      page: () => BidangView(),
+      binding: BindingsBuilder(() {
+        Get.put(BidangControllerSupabase());
+      }),
+    ),
+
     // GetPage(
     //   name: '/test-supabase',
     //   page: () => const TestSupabasePage(),

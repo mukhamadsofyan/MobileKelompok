@@ -5,7 +5,7 @@ import 'package:orgtrack/main.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const KelompokApp()); // ubah ke nama class utama di main.dart
+    await tester.pumpWidget(const OrgTrackApp()); // FIX HERE
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

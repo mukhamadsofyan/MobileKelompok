@@ -1,17 +1,9 @@
 import 'package:get/get.dart';
-import '../controllers/bidang_controller.dart';
-import '../controllers/program_controller.dart';
+import '../controllers/bidang_controller_supabase.dart';
 
 class BidangBinding extends Bindings {
   @override
   void dependencies() {
-    if (!Get.isRegistered<BidangController>()) {
-      Get.put<BidangController>(BidangController());
-    }
-
-    // Pastikan program controller juga tersedia
-    if (!Get.isRegistered<ProgramController>()) {
-      Get.put<ProgramController>(ProgramController());
-    }
+    Get.put(BidangControllerSupabase());
   }
 }

@@ -1,204 +1,319 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:orgtrack/app/ui/bidang/controllers/bidang_controller.dart';
-import '../controllers/bidang_controller_http.dart';
-import '../controllers/bidang_controller_dio.dart';
 import '../../programkerja/views/programkerja_view.dart';
 
-class BidangView extends StatefulWidget {
-  const BidangView({super.key});
+class BidangView extends StatelessWidget {
+  BidangView({super.key});
 
-  @override
-  State<BidangView> createState() => _BidangViewState();
-}
+  final controller = Get.put(BidangControllerSupabase());
 
-class _BidangViewState extends State<BidangView> {
-  late final BidangControllerHttp httpC;
-  late final BidangControllerDio dioC;
-  late final ModeControllerBidang modeC;
-
-  @override
-  void initState() {
-    super.initState();
-    httpC = Get.put(BidangControllerHttp());
-    dioC = Get.put(BidangControllerDio());
-    modeC = Get.put(ModeControllerBidang());
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (modeC.mode.value == FetchMode.http)
-        httpC.fetchBidang();
-      else
-        dioC.fetchBidang();
-    });
-
-    ever<FetchMode>(modeC.mode, (m) {
-      if (m == FetchMode.http)
-        httpC.fetchBidang();
-      else
-        dioC.fetchBidang();
-    });
-  }
-
-  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F6),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.teal.shade600,
+        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: () => _showAddDialog(context),
+      ),
+      backgroundColor: const Color(0xFFF3F6F7),
       body: Obx(() {
-        final isHttp = modeC.mode.value == FetchMode.http;
-        final list = isHttp ? httpC.bidangList : dioC.bidangList;
-        final loading = isHttp ? httpC.loadingBidang : dioC.loadingBidang;
-
-        if (loading.value) {
+        if (controller.loading.value) {
           return const Center(child: CircularProgressIndicator());
         }
 
+        final list = controller.bidangList;
+
         return Column(
           children: [
-            // ================== HEADER GRADIENT ==================
-            Container(
-              padding: const EdgeInsets.only(
-                  top: 45, left: 20, right: 20, bottom: 12),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF009688),
-                    Color(0xFF4DB6AC),
-                    Color(0xFF80CBC4),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ← Back + Title + Filter button (sejajar seperti Struktur)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => Get.back(),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                      ),
+            // ===================== HEADER =====================
+            _header(),
 
-                      const Text(
-                        "Bidang",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
+            const SizedBox(height: 12),
 
-                      // Dropdown Mode (HTTP / DIO)
-                      Obx(() => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.25),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: DropdownButton<FetchMode>(
-                              value: modeC.mode.value,
-                              underline: const SizedBox(),
-                              dropdownColor: Colors.white,
-                              icon: const Icon(Icons.expand_more,
-                                  color: Colors.white),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: FetchMode.http,
-                                  child: Text("HTTP"),
-                                ),
-                                DropdownMenuItem(
-                                  value: FetchMode.dio,
-                                  child: Text("DIO"),
-                                ),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) modeC.mode.value = val;
-                              },
-                            ),
-                          )),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // ================= SEARCH BAR =================
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(26),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.12),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: "Cari bidang...",
-                        prefixIcon:
-                            const Icon(Icons.search, color: Colors.teal),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // ================= LIST BIDANG =================
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 itemCount: list.length,
                 itemBuilder: (_, i) {
                   final b = list[i];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        b.nama,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () {
-                        Get.to(() => ProgramKerjaView(
-                              bidangId: b.id,
-                              bidangName: b.nama,
-                            ));
-                      },
-                    ),
-                  );
+
+                  return _bidangCard(context, b);
                 },
               ),
             ),
           ],
         );
       }),
+    );
+  }
+
+  // ============================================================
+  //                          HEADER
+  // ============================================================
+  Widget _header() {
+    return Container(
+      padding: const EdgeInsets.only(top: 55, left: 20, right: 20, bottom: 25),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF009688),
+            Color(0xFF4DB6AC),
+            Color(0xFF80CBC4),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // TITLE
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () => Get.back(),
+                child: const Icon(Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white, size: 22),
+              ),
+              const Text(
+                "Daftar Bidang",
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 40),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // SEARCH BOX
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.10),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const TextField(
+              decoration: InputDecoration(
+                hintText: "Cari bidang...",
+                prefixIcon: Icon(Icons.search, color: Colors.teal),
+                border: InputBorder.none,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  //                    CARD BIDANG BARU (MODERN)
+  // ============================================================
+Widget _bidangCard(BuildContext context, dynamic b) {
+  return GestureDetector(
+    onTap: () {
+      Get.to(() => ProgramKerjaView(
+            bidangId: b.id,
+            bidangName: b.nama,
+          ));
+    },
+
+    child: Hero(
+      tag: "bidang_${b.id}",
+      flightShuttleBuilder: (_, animation, __, ___, ____) {
+        return FadeTransition(
+          opacity: animation.drive(
+            CurveTween(curve: Curves.easeOut),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: Text(
+              b.nama,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        );
+      },
+
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // LEFT SIDE
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: Colors.teal.shade100,
+                  child: const Icon(Icons.workspaces_outline,
+                      color: Colors.teal, size: 22),
+                ),
+                const SizedBox(width: 14),
+
+                // TEXT HERO AREA
+                Hero(
+                  tag: "title_${b.id}",
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Text(
+                      b.nama,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // RIGHT SIDE (edit, delete, arrow)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                  onPressed: () => _showEditDialog(context, b.id!, b.nama),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  onPressed: () {
+                    Get.defaultDialog(
+                      title: "Hapus Bidang",
+                      middleText: "Yakin hapus \"${b.nama}\"?",
+                      textCancel: "Batal",
+                      textConfirm: "Hapus",
+                      confirmTextColor: Colors.white,
+                      onConfirm: () {
+                        controller.deleteBidang(b.id!);
+                        Get.back();
+                      },
+                    );
+                  },
+                ),
+
+                AnimatedOpacity(
+                  opacity: 0.8,
+                  duration: const Duration(milliseconds: 200),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.grey,
+                    size: 18,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+  // ============================================================
+  //                        DIALOG TAMBAH
+  // ============================================================
+  void _showAddDialog(BuildContext context) {
+    final nameC = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Tambah Bidang"),
+        content: TextField(
+          controller: nameC,
+          decoration: const InputDecoration(
+            labelText: "Nama Bidang",
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Batal")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+            onPressed: () {
+              if (nameC.text.isNotEmpty) {
+                controller.addBidang(nameC.text);
+                Get.back();
+              }
+            },
+            child: const Text("Simpan"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  //                        DIALOG EDIT
+  // ============================================================
+  void _showEditDialog(BuildContext context, int id, String nama) {
+    final nameC = TextEditingController(text: nama);
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Edit Bidang"),
+        content: TextField(
+          controller: nameC,
+          decoration: const InputDecoration(
+            labelText: "Nama Bidang",
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Batal")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+            onPressed: () {
+              if (nameC.text.isNotEmpty) {
+                controller.updateBidang(id, nameC.text);
+                Get.back();
+              }
+            },
+            child: const Text("Update"),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:orgtrack/app/data/models/bidang_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/AgendaModel.dart';
 import '../models/KeuanganModel.dart';
@@ -100,20 +101,18 @@ class SupabaseDB {
     return data.map<Struktural>((e) => Struktural.fromMap(e)).toList();
   }
 
-Future<dynamic> insertStruktural(Struktural s) async {
-  return await supabase.from('struktural').insert(s.toInsertMap());
-}
+  Future<dynamic> insertStruktural(Struktural s) async {
+    return await supabase.from('struktural').insert(s.toInsertMap());
+  }
 
+  Future<dynamic> updateStruktural(Struktural s) async {
+    if (s.id == null) throw Exception("ID Struktural null");
 
-Future<dynamic> updateStruktural(Struktural s) async {
-  if (s.id == null) throw Exception("ID Struktural null");
-
-  return await supabase
-      .from('struktural')
-      .update(s.toUpdateMap())      // ← tanpa ID
-      .eq('id', s.id!);
-}
-
+    return await supabase
+        .from('struktural')
+        .update(s.toUpdateMap()) // ← tanpa ID
+        .eq('id', s.id!);
+  }
 
   Future<dynamic> deleteStruktural(int id) async {
     return await supabase.from('struktural').delete().eq('id', id);
@@ -124,6 +123,30 @@ Future<dynamic> updateStruktural(Struktural s) async {
         await supabase.from('struktural').select().eq('id', id).single();
 
     return Struktural.fromMap(data);
+  }
+
+  // ================= CRUD BIDANG =================
+  Future<List<BidangModel>> getBidang() async {
+    final data =
+        await supabase.from('bidang').select().order('nama', ascending: true);
+
+    return data.map<BidangModel>((e) => BidangModel.fromMap(e)).toList();
+  }
+
+  Future<dynamic> insertBidang(BidangModel b) async {
+    return await supabase.from('bidang').insert(b.toJson());
+  }
+
+  Future<dynamic> updateBidang(BidangModel b) async {
+    if (b.id == null) throw Exception("ID Bidang null");
+
+    return await supabase.from('bidang').update(b.toJson()).eq('id', b.id!);
+  }
+
+  Future<dynamic> deleteBidang(int id) async {
+    // Jika ada tabel lain yang tergantung bidang (misal program_kerja)
+    // kamu bisa hapus turunannya dulu di sini.
+    return await supabase.from('bidang').delete().eq('id', id);
   }
 
   // ================= CRUD AGENDA ORGANISASI =================
