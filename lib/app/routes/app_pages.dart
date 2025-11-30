@@ -17,6 +17,8 @@ import 'package:orgtrack/app/ui/register/views/registerview.dart';
 import 'package:orgtrack/app/ui/visimisi/bindings/visi_misi_binding.dart';
 import 'package:orgtrack/app/ui/visimisi/views/visi_misi_view.dart';
 import 'package:orgtrack/app/ui/login/views/login_view.dart';
+import 'package:orgtrack/modules/lokasi/controllers/lokasi_controller.dart';
+import 'package:orgtrack/modules/lokasi/views/lokasi_view.dart';
 import '../ui/home/views/home_view.dart';
 import '../ui/keuangan/views/keuangan_view.dart';
 import '../ui/struktur/views/struktur_view.dart';
@@ -39,6 +41,13 @@ class AppPages {
     //   page: () => AttendanceAgendaView(),
     //   binding: AttendanceAgendaBinding(),
     // ),
+    GetPage(
+      name: Routes.LOKASI,
+      page: () => const LokasiView(),
+      binding: BindingsBuilder(() {
+        Get.put(LokasiController());
+      }),
+    ),
     GetPage(
       name: Routes.ATTENDANCE_AGENDA,
       page: () => AttendanceAgendaView(),

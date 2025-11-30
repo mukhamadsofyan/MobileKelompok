@@ -32,6 +32,9 @@ dependencies:
   lottie: ^2.7.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  geolocator: ^13.0.1    # versi kira-kira, sesuaikan dengan yang terbaru
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
 
 
 
@@ -43,9 +46,13 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # assets:
+  #   - assets/images/hmif.jpg
+  #   - assets/images/hmifnobg.png
+  #   - assets/images/kegiatan1.jpg
+  #   - assets/images/bph.jpg
+  #   - assets/images/arunika.jpg
+  #   - .env
   assets:
-    - assets/images/hmif.jpg
-    - assets/images/hmifnobg.png
-    - assets/images/kegiatan1.jpg
-    - assets/images/bph.jpg
-    - .env
+  - assets/images/
+  - .env
