@@ -33,7 +33,7 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Get.find<AuthController>(); // akses admin
+    final auth = Get.find<AuthController>();
     final themeC = Get.find<ThemeController>();
 
     final colorBG = Theme.of(context).colorScheme.background;
@@ -44,13 +44,11 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
       backgroundColor: colorBG,
       body: Column(
         children: [
-          // ==================== HEADER GRADIENT ====================
+          // ================= HEADER =================
           Container(
             padding: const EdgeInsets.only(top: 45, left: 20, right: 20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
                 colors: themeC.isDark
                     ? const [
                         Color(0xFF00332E),
@@ -67,61 +65,45 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                 bottomLeft: Radius.circular(32),
                 bottomRight: Radius.circular(32),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(themeC.isDark ? 0.4 : 0.18),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
-                ),
-              ],
             ),
             child: Column(
               children: [
-                // ==================== TOP BAR ====================
+                // TOP BAR
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white),
                       onPressed: () => Get.back(),
                     ),
                     Text(
                       "Struktur Kabinet",
                       style: GoogleFonts.poppins(
                         fontSize: 24,
-                        color: Colors.white,
                         fontWeight: FontWeight.w900,
+                        color: Colors.white,
                       ),
                     ),
                     Row(
                       children: [
-                        // ====== TOGGLE THEME ======
                         IconButton(
                           icon: Icon(
                             themeC.isDark ? Icons.dark_mode : Icons.light_mode,
                             color: Colors.white,
-                            size: 26,
                           ),
                           onPressed: () => themeC.toggleTheme(),
                         ),
-
-                        // ====== FILTER MENU ======
                         PopupMenuButton<String>(
-                          icon: const Icon(
-                            Icons.filter_alt_rounded,
-                            color: Colors.white,
-                          ),
+                          icon: const Icon(Icons.filter_alt_rounded,
+                              color: Colors.white),
                           onSelected: (value) {
                             if (value == 'jabatan') {
-                              c.list.sort((a, b) => _jabatanLevel(b.role)
-                                  .compareTo(_jabatanLevel(a.role)));
+                              c.list.sort((a, b) => _roleRank(b.role)
+                                  .compareTo(_roleRank(a.role)));
                             } else if (value == 'terbaru') {
                               c.list.sort((a, b) => b.id!.compareTo(a.id!));
-                            } else if (value == 'terlama') {
+                            } else {
                               c.list.sort((a, b) => a.id!.compareTo(b.id!));
                             }
                             setState(() {});
@@ -143,19 +125,11 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
 
                 const SizedBox(height: 20),
 
-                // ============== SEARCH BAR CLEAN (IKUT TEMA) ==============
+                // SEARCH BAR
                 Container(
                   decoration: BoxDecoration(
                     color: cardColor,
                     borderRadius: BorderRadius.circular(26),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black
-                            .withOpacity(themeC.isDark ? 0.5 : 0.12),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      )
-                    ],
                   ),
                   child: TextField(
                     onChanged: (value) =>
@@ -164,25 +138,20 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     decoration: InputDecoration(
                       hintText: "Cari anggota kabinet...",
                       prefixIcon:
-                          Icon(Icons.search, color: colorText.withOpacity(0.6)),
+                          Icon(Icons.search, color: colorText.withOpacity(0.5)),
                       border: InputBorder.none,
-                      hintStyle: TextStyle(
-                        color: colorText.withOpacity(0.5),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
-                      ),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 18),
+                      hintStyle: TextStyle(color: colorText.withOpacity(0.5)),
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
               ],
             ),
           ),
 
-          // ==================== LIST GRID ====================
+          // ================= LIST =================
           Expanded(
             child: Obx(() {
               if (c.loading.value) {
@@ -199,8 +168,8 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                   child: Text(
                     "Tidak ada anggota ditemukan",
                     style: GoogleFonts.poppins(
-                      fontSize: 16,
                       color: colorText.withOpacity(0.6),
+                      fontSize: 16,
                     ),
                   ),
                 );
@@ -210,8 +179,8 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                 padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 14,
                   mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
                   childAspectRatio: 0.85,
                 ),
                 itemCount: filtered.length,
@@ -219,72 +188,107 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                   final s = filtered[index];
 
                   return FadeInUp(
-                    duration: Duration(milliseconds: 400 + (index * 45)),
-                    child: GestureDetector(
-                      onTap: () => _showDetailFull(s),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: themeC.isDark ? cardColor : null,
-                          gradient: themeC.isDark
-                              ? null
-                              : LinearGradient(
-                                  colors: [
-                                    Colors.white,
-                                    Colors.teal.shade50,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorText.withOpacity(0.15),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                    duration: Duration(milliseconds: 400 + index * 45),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Stack(
                           children: [
-                            CircleAvatar(
-                              radius: 34,
-                              backgroundColor: themeC.isDark
-                                  ? Colors.teal.shade900.withOpacity(0.45)
-                                  : Colors.teal.shade100,
-                              child: Text(
-                                s.name[0].toUpperCase(),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.bold,
-                                  color: themeC.isDark
-                                      ? Colors.teal.shade200
-                                      : Colors.teal.shade700,
+                            // CARD UTAMA (tetap full size)
+                            GestureDetector(
+                              onTap: () => _showDetail(s),
+                              child: Container(
+                                width: constraints.maxWidth,
+                                height: constraints.maxHeight,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  gradient: themeC.isDark
+                                      ? null
+                                      : LinearGradient(
+                                          colors: [
+                                            Colors.white,
+                                            Colors.teal.shade50
+                                          ],
+                                        ),
+                                  color: themeC.isDark ? cardColor : null,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 34,
+                                      backgroundColor: themeC.isDark
+                                          ? Colors.teal.shade900
+                                              .withOpacity(0.4)
+                                          : Colors.teal.shade100,
+                                      child: Text(
+                                        s.name[0].toUpperCase(),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: themeC.isDark
+                                              ? Colors.teal.shade200
+                                              : Colors.teal.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      s.name,
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.bold,
+                                        color: colorText,
+                                        fontSize: 16,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      s.role,
+                                      style: GoogleFonts.poppins(
+                                        color: themeC.isDark
+                                            ? Colors.teal.shade200
+                                            : Colors.teal.shade700,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              s.name,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                color: colorText,
-                                fontSize: 16,
+
+                            // MENU TITIK TIGA
+                            if (auth.isAdmin)
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: PopupMenuButton<String>(
+                                  icon: Icon(Icons.more_vert,
+                                      color: colorText.withOpacity(0.65),
+                                      size: 22),
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      _openForm(c, s);
+                                    } else if (value == 'delete') {
+                                      _confirmDelete(s);
+                                    }
+                                  },
+                                  itemBuilder: (_) => const [
+                                    PopupMenuItem(
+                                        value: 'edit', child: Text("Edit")),
+                                    PopupMenuItem(
+                                        value: 'delete', child: Text("Hapus")),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Text(
-                              s.role,
-                              style: GoogleFonts.poppins(
-                                color: themeC.isDark
-                                    ? Colors.teal.shade200
-                                    : Colors.teal.shade700,
-                                fontSize: 13,
-                              ),
-                            ),
                           ],
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   );
                 },
@@ -294,46 +298,41 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
         ],
       ),
 
-      // ============== FAB ONLY ADMIN ==============
+      // ================= FAB (Admin Only) =================
       floatingActionButton: auth.isAdmin
           ? FloatingActionButton.extended(
               backgroundColor: Theme.of(context).colorScheme.primary,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                "Tambah",
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () => _showDialog(context, c),
+              label:
+                  const Text("Tambah", style: TextStyle(color: Colors.white)),
+              onPressed: () => _openForm(c),
             )
           : null,
     );
   }
 
-  // ==================== DETAIL QR ====================
-  void _showDetailFull(Struktural s) {
-    final qrData = "ANGGOTA|${s.id}|${s.name}|${s.role}";
+  // ================= DETAIL =================
+  void _showDetail(Struktural s) {
     final themeC = Get.find<ThemeController>();
-    final context = Get.context!;
-    final colorBG = Theme.of(context).colorScheme.background;
-    final colorText = Theme.of(context).colorScheme.onBackground;
+    final ctx = Get.context!;
+    final colorText = Theme.of(ctx).colorScheme.onBackground;
+
+    final qr = "ANGGOTA|${s.id}|${s.name}|${s.role}";
 
     Get.to(() => Scaffold(
-          backgroundColor: colorBG,
+          backgroundColor: Theme.of(ctx).colorScheme.background,
           appBar: AppBar(
-            title: Text("Detail Anggota", style: GoogleFonts.poppins()),
+            title: const Text("Detail Anggota"),
+            centerTitle: true,
             backgroundColor:
                 themeC.isDark ? Colors.teal.shade900 : Colors.teal.shade700,
             foregroundColor: Colors.white,
-            centerTitle: true,
           ),
           body: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // FOTO / INITIAL
                   CircleAvatar(
                     radius: 70,
                     backgroundColor: themeC.isDark
@@ -342,7 +341,7 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     child: Text(
                       s.name[0].toUpperCase(),
                       style: GoogleFonts.poppins(
-                        fontSize: 42,
+                        fontSize: 40,
                         fontWeight: FontWeight.bold,
                         color: themeC.isDark
                             ? Colors.teal.shade200
@@ -351,41 +350,32 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
-                  // NAMA
                   Text(
                     s.name,
-                    textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       color: colorText,
                     ),
                   ),
-
-                  const SizedBox(height: 6),
-
-                  // JABATAN
                   Text(
                     s.role,
-                    textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       color: themeC.isDark
                           ? Colors.teal.shade200
-                          : Colors.teal.shade600,
-                      fontWeight: FontWeight.w600,
+                          : Colors.teal.shade700,
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 26),
 
                   // QR CODE
                   QrImageView(
-                    data: qrData,
-                    version: QrVersions.auto,
-                    size: 200,
+                    data: qr,
+                    size: 230,
                     eyeStyle: QrEyeStyle(
                       eyeShape: QrEyeShape.circle,
                       color: themeC.isDark
@@ -408,26 +398,32 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
         ));
   }
 
-  int _jabatanLevel(String role) {
-    const levels = {
-      'Ketua': 5,
-      'Wakil Ketua': 4,
-      'Sekretaris': 3,
-      'Bendahara': 2,
-      'Anggota': 1,
-    };
-    return levels[role] ?? 0;
+  // ================= DELETE CONFIRM =================
+  void _confirmDelete(Struktural s) {
+    Get.defaultDialog(
+      title: "Hapus Anggota?",
+      middleText: "Yakin ingin menghapus ${s.name}?",
+      textCancel: "Batal",
+      textConfirm: "Hapus",
+      confirmTextColor: Colors.white,
+      buttonColor: Colors.red,
+      onConfirm: () async {
+        final c = Get.find<StrukturalController>();
+        await c.deleteStrukturalById(s.id!);
+        Get.back(); // close dialog
+      },
+    );
   }
 
-  // ==================== DIALOG TAMBAH/EDIT ====================
-  void _showDialog(BuildContext context, StrukturalController c,
-      [Struktural? s]) {
+  // ================= FORM TAMBAH / EDIT =================
+  void _openForm(StrukturalController c, [Struktural? s]) {
     final themeC = Get.find<ThemeController>();
-    final cardColor = Theme.of(context).cardColor;
-    final colorText = Theme.of(context).colorScheme.onBackground;
+    final ctx = Get.context!;
+    final colorText = Theme.of(ctx).colorScheme.onBackground;
+    final cardColor = Theme.of(ctx).cardColor;
 
     final nameC = TextEditingController(text: s?.name ?? '');
-    String selectedRole = s?.role ?? 'Anggota';
+    String role = s?.role ?? "Anggota";
 
     final roles = [
       'Ketua',
@@ -438,12 +434,12 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
     ];
 
     showDialog(
-      context: context,
-      builder: (ctx) {
+      context: ctx,
+      builder: (_) {
         return Dialog(
           backgroundColor: cardColor,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -459,9 +455,10 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                         : Colors.teal.shade800,
                   ),
                 ),
+
                 const SizedBox(height: 18),
 
-                // NAMA
+                // NAMA INPUT
                 TextField(
                   controller: nameC,
                   style: TextStyle(color: colorText),
@@ -478,8 +475,9 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
 
                 const SizedBox(height: 16),
 
+                // ROLE DROPDOWN
                 DropdownButtonFormField(
-                  value: selectedRole,
+                  value: role,
                   dropdownColor: cardColor,
                   decoration: InputDecoration(
                     labelText: "Jabatan",
@@ -491,28 +489,25 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     ),
                   ),
                   items: roles
-                      .map((role) =>
-                          DropdownMenuItem(value: role, child: Text(role)))
+                      .map((r) => DropdownMenuItem(
+                            value: r,
+                            child: Text(r, style: TextStyle(color: colorText)),
+                          ))
                       .toList(),
-                  onChanged: (v) => selectedRole = v.toString(),
+                  onChanged: (v) => role = v.toString(),
                 ),
 
                 const SizedBox(height: 20),
 
+                // BUTTONS
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: colorText,
-                          side: BorderSide(
-                            color: colorText.withOpacity(0.4),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
                         onPressed: () => Get.back(),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: colorText.withOpacity(0.4)),
+                        ),
                         child: const Text("Batal"),
                       ),
                     ),
@@ -520,43 +515,32 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
+                          backgroundColor: Theme.of(ctx).colorScheme.primary,
                         ),
+                        child: const Text("Simpan",
+                            style: TextStyle(color: Colors.white)),
                         onPressed: () async {
                           final name = nameC.text.trim();
 
                           if (name.isEmpty) {
                             Get.snackbar(
-                              "Peringatan",
-                              "Nama tidak boleh kosong",
-                              backgroundColor: Colors.orange.shade100
-                                  .withOpacity(themeC.isDark ? 0.2 : 1),
-                              colorText: Colors.orange.shade800,
-                            );
+                                "Peringatan", "Nama tidak boleh kosong");
                             return;
                           }
 
                           if (s == null) {
-                            await c.addStruktural(name, selectedRole);
+                            await c.addStruktural(name, role);
                           } else {
                             await c.updateStruktural(Struktural(
                               id: s.id,
                               name: name,
-                              role: selectedRole,
+                              role: role,
                             ));
                           }
 
                           await c.loadAll();
                           Get.back();
                         },
-                        child: const Text(
-                          "Simpan",
-                          style: TextStyle(color: Colors.white),
-                        ),
                       ),
                     ),
                   ],
@@ -567,5 +551,17 @@ class _StrukturKabinetViewState extends State<StrukturKabinetView> {
         );
       },
     );
+  }
+
+  // ================= ROLE RANK =================
+  int _roleRank(String role) {
+    const level = {
+      'Ketua': 5,
+      'Wakil Ketua': 4,
+      'Sekretaris': 3,
+      'Bendahara': 2,
+      'Anggota': 1,
+    };
+    return level[role] ?? 0;
   }
 }

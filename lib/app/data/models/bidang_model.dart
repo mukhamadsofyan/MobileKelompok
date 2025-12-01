@@ -1,33 +1,63 @@
+import 'dart:convert';
+
 class BidangModel {
   final int id;
   final String nama;
+  final String deskripsi;
+  final String? logoUrl; // opsional (kalau memakai logo)
 
   BidangModel({
     required this.id,
     required this.nama,
+    required this.deskripsi,
+    this.logoUrl,
   });
 
-  // ✅ Dipakai kalau kamu panggil BidangModel.fromJson(...)
-  factory BidangModel.fromJson(Map<String, dynamic> json) {
+  /// =============================
+  /// FROM MAP (MAP → OBJECT)
+  /// =============================
+  factory BidangModel.fromMap(Map<String, dynamic> map) {
     return BidangModel(
-      id: json['id'] is int
-          ? json['id'] as int
-          : int.parse(json['id'].toString()),
-      nama: json['nama'] ?? '',
+      id: map['id'] is String ? int.tryParse(map['id']) ?? 0 : map['id'] ?? 0,
+      nama: map['nama'] ?? map['name'] ?? '',
+      deskripsi: map['deskripsi'] ?? map['description'] ?? '',
+      logoUrl: map['logo'] ?? map['logoUrl'],
     );
   }
 
-  // ✅ Dipakai kalau kamu panggil BidangModel.fromMap(...)
-  //    Biar nggak bingung, kita delegasikan saja ke fromJson
-  factory BidangModel.fromMap(Map<String, dynamic> map) {
-    return BidangModel.fromJson(map);
-  }
+  /// FROM JSON
+  factory BidangModel.fromJson(String source) =>
+      BidangModel.fromMap(json.decode(source));
 
-  // (opsional) kalau perlu kirim balik ke Supabase
-  Map<String, dynamic> toJson() {
+  /// =============================
+  /// TO MAP (OBJECT → MAP)
+  /// =============================
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'nama': nama,
+      'deskripsi': deskripsi,
+      'logoUrl': logoUrl,
     };
+  }
+
+  /// TO JSON
+  String toJson() => json.encode(toMap());
+
+  /// =============================
+  /// COPYWITH (UPDATE SEBAGIAN DATA)
+  /// =============================
+  BidangModel copyWith({
+    int? id,
+    String? nama,
+    String? deskripsi,
+    String? logoUrl,
+  }) {
+    return BidangModel(
+      id: id ?? this.id,
+      nama: nama ?? this.nama,
+      deskripsi: deskripsi ?? this.deskripsi,
+      logoUrl: logoUrl ?? this.logoUrl,
+    );
   }
 }

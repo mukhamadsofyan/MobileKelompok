@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:orgtrack/app/data/models/laporanModel.dart';
+import 'package:orgtrack/app/ui/programkerja/controllers/program_kerja_mode.dart';
 import 'package:orgtrack/app/ui/programkerja/controllers/programkerja_controller.dart';
+import 'package:orgtrack/app/ui/programkerja/controllers/programkerja_dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -67,7 +69,9 @@ Future<void> main() async {
   // ================================
   //   WAJIB UNTUK PROGRAM KERJA
   // ================================
-  Get.put(ProgramKerjaSupabaseController(), permanent: true);
+  Get.put(ProgramControllerHttp(), permanent: true);
+  Get.put(ProgramControllerDio(), permanent: true);
+  Get.put(ModeController(), permanent: true);
 
   runApp(const OrgTrackApp());
 }

@@ -53,12 +53,6 @@ class AppPages {
       page: () => AttendanceAgendaView(),
       binding: AttendanceAgendaBinding(),
     ),
-
-    GetPage(
-      name: Routes.STRUKTUR,
-      page: () => StrukturKabinetView(),
-      binding: StrukturBinding(),
-    ),
     GetPage(
       name: Routes.LAPORAN,
       page: () => const LaporanView(),
@@ -93,21 +87,19 @@ class AppPages {
     ),
     GetPage(
       name: Routes.NOTIFIKASI,
-      page: () => const NotifikasiView(),
-      binding: NotifikasiBinding(),
+      page: () => NotifikasiView(),
+      bindings: [
+        NotifikasiBinding(),
+        AgendaBinding(), // <- WAJIB
+      ],
     ),
+
     // app_pages.dart
     GetPage(
       name: Routes.BIDANG,
-      page: () => BidangView(),
-      binding: BindingsBuilder(() {
-        Get.put(BidangControllerSupabase());
-      }),
+      page: () => const BidangView(),
     ),
-    // GetPage(
-    //   name: '/test-supabase',
-    //   page: () => const TestSupabasePage(),
-    // ),
+
 
     GetPage(
       name: Routes.HOME,

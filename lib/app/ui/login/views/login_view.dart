@@ -10,8 +10,7 @@ class LoginView extends StatefulWidget {
   State<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends State<LoginView>
-    with TickerProviderStateMixin {
+class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
   final emailC = TextEditingController();
   final passC = TextEditingController();
 
@@ -23,6 +22,7 @@ class _LoginViewState extends State<LoginView>
   late Animation<double> shake;
 
   bool isError = false;
+  bool isPasswordVisible = false; // 👁️ state untuk show/hide password
 
   @override
   void initState() {
@@ -176,6 +176,7 @@ class _LoginViewState extends State<LoginView>
 
                         const SizedBox(height: 25),
 
+                        // EMAIL
                         _inputField(
                           controller: emailC,
                           hint: "Enter your email address",
@@ -185,12 +186,19 @@ class _LoginViewState extends State<LoginView>
 
                         const SizedBox(height: 18),
 
+                        // PASSWORD (dengan toggle)
                         _inputField(
                           controller: passC,
                           hint: "Password",
                           icon: Icons.lock_outline,
                           obscure: true,
                           error: isError,
+                          isPassword: true,
+                          togglePassword: () {
+                            setState(() {
+                              isPasswordVisible = !isPasswordVisible;
+                            });
+                          },
                         ),
 
                         const SizedBox(height: 10),
@@ -225,51 +233,37 @@ class _LoginViewState extends State<LoginView>
                               onPressed: auth.isLoading.value
                                   ? null
                                   : () async {
-                                      final email =
-                                          emailC.text.trim();
-                                      final pass =
-                                          passC.text.trim();
+                                      final email = emailC.text.trim();
+                                      final pass = passC.text.trim();
 
                                       String? validationMsg;
 
-                                      if (email.isEmpty ||
-                                          pass.isEmpty) {
-                                        validationMsg =
-                                            "Email dan password tidak boleh kosong.";
-                                      } else if (!GetUtils.isEmail(
-                                          email)) {
-                                        validationMsg =
-                                            "Format email tidak valid.";
+                                      if (email.isEmpty || pass.isEmpty) {
+                                        validationMsg = "Email dan password tidak boleh kosong.";
+                                      } else if (!GetUtils.isEmail(email)) {
+                                        validationMsg = "Format email tidak valid.";
                                       } else if (pass.length < 6) {
-                                        validationMsg =
-                                            "Password minimal 6 karakter.";
+                                        validationMsg = "Password minimal 6 karakter.";
                                       }
 
                                       if (validationMsg != null) {
                                         Get.snackbar(
                                           "Validasi gagal",
                                           validationMsg,
-                                          snackPosition:
-                                              SnackPosition.TOP,
+                                          snackPosition: SnackPosition.TOP,
                                         );
                                         triggerError();
                                         return;
                                       }
 
-                                      final success =
-                                          await auth.login(
-                                        email,
-                                        pass,
-                                      );
+                                      final success = await auth.login(email, pass);
 
                                       if (!success) {
                                         triggerError();
                                       }
                                     },
                               child: auth.isLoading.value
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
+                                  ? const CircularProgressIndicator(color: Colors.white)
                                   : const Text(
                                       "LOGIN",
                                       style: TextStyle(
@@ -321,70 +315,78 @@ class _LoginViewState extends State<LoginView>
 
   // INPUT FIELD
   Widget _inputField({
-  required TextEditingController controller,
-  required String hint,
-  required IconData icon,
-  bool obscure = false,
-  bool error = false,
-}) {
-  return AnimatedContainer(
-    duration: const Duration(milliseconds: 300),
-    height: 50,
-    decoration: BoxDecoration(
-      color: error ? Colors.red.shade50 : const Color(0xFFF0F3F6),
-      borderRadius: BorderRadius.circular(30),
-      border: Border.all(
-        color: error ? Colors.red.shade300 : Colors.black26,
-        width: error ? 1.8 : 1.2,
-      ),
-    ),
-    child: Row(
-      children: [
-        const SizedBox(width: 12),
-
-        // ICON — center secara vertical
-        Icon(
-          icon,
-          color: error ? Colors.red.shade400 : Colors.black87,
-          size: 22,
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool obscure = false,
+    bool error = false,
+    bool isPassword = false,
+    VoidCallback? togglePassword,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: 50,
+      decoration: BoxDecoration(
+        color: error ? Colors.red.shade50 : const Color(0xFFF0F3F6),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: error ? Colors.red.shade300 : Colors.black26,
+          width: error ? 1.8 : 1.2,
         ),
-
-        const SizedBox(width: 12),
-
-        // TEXTFIELD — center secara vertical
-        Expanded(
-          child: TextField(
-            controller: controller,
-            obscureText: obscure,
-            style: const TextStyle(
-              color: Colors.black87,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(
-                color: Colors.black45,
-                fontWeight: FontWeight.w500,
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 12),
+          Icon(
+            icon,
+            color: error ? Colors.red.shade400 : Colors.black87,
+            size: 22,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              obscureText: obscure && !isPasswordVisible,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
               ),
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 10), // <== FIX CENTER
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
+                  color: Colors.black45,
+                  fontWeight: FontWeight.w500,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+
+                // 👁️ suffix icon show/hide password
+                suffixIcon: isPassword
+                    ? IconButton(
+                        icon: Icon(
+                          isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.black54,
+                        ),
+                        onPressed: togglePassword,
+                      )
+                    : null,
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   // SOCIAL LOGIN BUTTON
   Widget _social(String title, IconData icon) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      padding:
-          const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         border: Border.all(color: Colors.black26, width: 1.3),
@@ -392,11 +394,7 @@ class _LoginViewState extends State<LoginView>
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 28,
-            color: Colors.black87,
-          ),
+          Icon(icon, size: 28, color: Colors.black87),
           const SizedBox(width: 10),
           Text(
             title,

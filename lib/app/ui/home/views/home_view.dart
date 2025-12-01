@@ -21,6 +21,7 @@ class _HomeViewState extends State<HomeView>
   void initState() {
     super.initState();
 
+    // Pastikan controller tidak null
     Get.put(OrgController());
     Get.put(KeuanganController());
 
@@ -82,9 +83,12 @@ class _HomeViewState extends State<HomeView>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      _blendColor(const Color(0xFF009688), const Color(0xFF004D40)),
-                      _blendColor(const Color(0xFF4DB6AC), const Color(0xFF00796B)),
-                      _blendColor(const Color(0xFF80CBC4), const Color(0xFF26A69A)),
+                      _blendColor(
+                          const Color(0xFF009688), const Color(0xFF004D40)),
+                      _blendColor(
+                          const Color(0xFF4DB6AC), const Color(0xFF00796B)),
+                      _blendColor(
+                          const Color(0xFF80CBC4), const Color(0xFF26A69A)),
                     ],
                   ),
                   borderRadius: _dynamicBorderRadius(),
@@ -105,11 +109,8 @@ class _HomeViewState extends State<HomeView>
                       child: _header(themeC),
                     ),
                     const SizedBox(height: 20),
-
                     _cabinetCard(context),
-
                     const SizedBox(height: 30),
-
                     Text(
                       'Menu Utama',
                       style: TextStyle(
@@ -120,16 +121,10 @@ class _HomeViewState extends State<HomeView>
                     ),
                     const SizedBox(height: 16),
                     _menuGrid(context, c),
-
                     const SizedBox(height: 30),
-
-                    // ⭐ Pengumuman section
                     _pengumumanHeader(),
-
                     const SizedBox(height: 12),
-
                     _pengumumanList(),
-
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -138,14 +133,11 @@ class _HomeViewState extends State<HomeView>
           );
         }),
       ),
-
       bottomNavigationBar: _bottomNav(context),
     );
   }
 
-  // ========================================================
   // HEADER
-  // ========================================================
   Widget _header(ThemeController themeC) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -187,9 +179,7 @@ class _HomeViewState extends State<HomeView>
     );
   }
 
-  // ========================================================
   // CABINET CARD
-  // ========================================================
   Widget _cabinetCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -230,13 +220,8 @@ class _HomeViewState extends State<HomeView>
     );
   }
 
-  // ========================================================
   // MENU GRID
-  // ========================================================
   Widget _menuGrid(BuildContext context, OrgController c) {
-    final colorCard = Theme.of(context).cardColor;
-    final colorText = Theme.of(context).colorScheme.onSurface;
-
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -324,7 +309,7 @@ class _HomeViewState extends State<HomeView>
   }
 
   // ========================================================
-  // PENGUMUMAN HEADER (title + tombol lihat semua)
+  // PENGUMUMAN HEADER
   // ========================================================
   Widget _pengumumanHeader() {
     return Row(
@@ -347,7 +332,7 @@ class _HomeViewState extends State<HomeView>
   }
 
   // ========================================================
-  // PENGUMUMAN LIST (limit 3)
+  // PENGUMUMAN LIST — Aman dari null
   // ========================================================
   Widget _pengumumanList() {
     final dummy = [
@@ -365,11 +350,6 @@ class _HomeViewState extends State<HomeView>
         "title": "Open Recruitment Panitia",
         "date": "24 November 2025",
         "desc": "Kesempatan bergabung sebagai panitia event besar tahun ini."
-      },
-      {
-        "title": "Maintenance Website HMIF",
-        "date": "20 November 2025",
-        "desc": "Website akan offline sementara pukul 14.00–17.00."
       },
     ];
 
@@ -400,8 +380,8 @@ class _HomeViewState extends State<HomeView>
                   color: Colors.purple.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.campaign,
-                    color: Colors.purple, size: 26),
+                child:
+                    const Icon(Icons.campaign, color: Colors.purple, size: 26),
               ),
               const SizedBox(width: 14),
 
@@ -411,7 +391,7 @@ class _HomeViewState extends State<HomeView>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      ann["title"]!,
+                      ann["title"] ?? "",
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -420,7 +400,7 @@ class _HomeViewState extends State<HomeView>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      ann["date"]!,
+                      ann["date"] ?? "",
                       style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context)
@@ -431,7 +411,7 @@ class _HomeViewState extends State<HomeView>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      ann["desc"]!,
+                      ann["desc"] ?? "",
                       style: TextStyle(
                         fontSize: 13,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -448,7 +428,7 @@ class _HomeViewState extends State<HomeView>
   }
 
   // ========================================================
-  // BOTTOM NAV
+  // BOTTOM NAVIGATION
   // ========================================================
   Widget _bottomNav(BuildContext context) {
     return BottomNavigationBar(
@@ -464,7 +444,8 @@ class _HomeViewState extends State<HomeView>
         } else if (index == 2) {
           Get.toNamed(Routes.AGENDA_ORGANISASI);
         } else if (index == 1) {
-          Get.toNamed(Routes.PENGUMUMAN); // NOTIFIKASI KE PENGUMUMAN
+          Get.toNamed(Routes.NOTIFIKASI);
+          // NOTIFIKASI → ke pengumuman
         }
       },
       items: const [

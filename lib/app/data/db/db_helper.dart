@@ -134,18 +134,16 @@ class SupabaseDB {
   }
 
   Future<dynamic> insertBidang(BidangModel b) async {
-    return await supabase.from('bidang').insert(b.toJson());
+    return await supabase.from('bidang').insert(b.toMap());
   }
 
   Future<dynamic> updateBidang(BidangModel b) async {
     if (b.id == null) throw Exception("ID Bidang null");
 
-    return await supabase.from('bidang').update(b.toJson()).eq('id', b.id!);
+    return await supabase.from('bidang').update(b.toMap()).eq('id', b.id!);
   }
 
   Future<dynamic> deleteBidang(int id) async {
-    // Jika ada tabel lain yang tergantung bidang (misal program_kerja)
-    // kamu bisa hapus turunannya dulu di sini.
     return await supabase.from('bidang').delete().eq('id', id);
   }
 
@@ -213,5 +211,4 @@ class SupabaseDB {
   Future<dynamic> deleteAttendanceByAgenda(int agendaId) async {
     return await supabase.from('attendance').delete().eq('agenda_id', agendaId);
   }
-  
 }
