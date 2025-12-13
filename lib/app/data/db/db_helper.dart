@@ -157,7 +157,8 @@ class SupabaseDB {
         .order('date', ascending: false);
 
     return raw
-        .map<AgendaOrganisasi>((e) => AgendaOrganisasi.fromMap(e))
+        .map<AgendaOrganisasi>(
+            (e) => AgendaOrganisasi.fromMap(Map<String, dynamic>.from(e)))
         .toList();
   }
 
@@ -213,5 +214,4 @@ class SupabaseDB {
   Future<dynamic> deleteAttendanceByAgenda(int agendaId) async {
     return await supabase.from('attendance').delete().eq('agenda_id', agendaId);
   }
-  
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "655786538944",
+    "project_id": "orgtrack-6ecf3",
+    "storage_bucket": "orgtrack-6ecf3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:655786538944:android:7ef770df156e9fdd323a25",
+        "android_client_info": {
+          "package_name": "com.example.kelompok"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkF-nMdtDgfxtEHYYwc2LFcVXWHU07D3Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

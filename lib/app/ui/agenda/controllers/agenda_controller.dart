@@ -19,40 +19,54 @@ class AgendaController extends GetxController {
   // ===============================
   Future<void> fetchAgendas() async {
     loading.value = true;
+
     try {
-      agendas.value = await db.getAgendaOrganisasi();
-    } catch (e) {
-      print("Error fetching agendas: $e");
+      final data = await db.getAgendaOrganisasi();
+      agendas.assignAll(data);                  // 👍 lebih aman daripada value =
+    } catch (e, stack) {
+      print("🔥 Error fetching agendas: $e");
+      print(stack);                             // 👍 biar tau error asli
+    } finally {
+      loading.value = false;                    // 👍 tetap matikan loading
     }
-    loading.value = false;
   }
 
-  // Alias untuk tombol "Muat Ulang"
-  Future<void> loadAgenda() async {
-    return fetchAgendas();
-  }
+  // Alias tombol refresh
+  Future<void> loadAgenda() async => fetchAgendas();
 
   // ===============================
-  // Tambah agenda baru
+  // Tambah agenda
   // ===============================
   Future<void> addAgenda(AgendaOrganisasi a) async {
-    await db.insertAgenda(a);
-    fetchAgendas();
+    try {
+      await db.insertAgenda(a);
+      await fetchAgendas();                     // 👍 pastikan data refresh
+    } catch (e) {
+      print("🔥 Error addAgenda: $e");
+    }
   }
 
   // ===============================
   // Hapus agenda
   // ===============================
   Future<void> deleteAgenda(int id) async {
-    await db.deleteAgenda(id);
-    fetchAgendas();
+    try {
+      await db.deleteAgenda(id);
+      await fetchAgendas();
+    } catch (e) {
+      print("🔥 Error deleteAgenda: $e");
+    }
   }
 
   // ===============================
   // Update agenda
   // ===============================
   Future<void> updateAgenda(AgendaOrganisasi a) async {
-    await db.updateAgenda(a);
-    fetchAgendas();
+    try {
+      await db.updateAgenda(a);
+      await fetchAgendas();
+    } catch (e) {
+      print("🔥 Error updateAgenda: $e");
+    }
   }
 }

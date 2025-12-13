@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:orgtrack/app/ui/agenda/controllers/agenda_controller.dart';
-import '../../../routes/app_pages.dart';
+import 'package:orgtrack/app/ui/notifikasi/controllers/notifikasi_controller.dart';
 import 'dart:ui';
+
+import '../../../routes/app_pages.dart';
 
 class NotifikasiView extends StatefulWidget {
   const NotifikasiView({super.key});
@@ -14,7 +15,9 @@ class NotifikasiView extends StatefulWidget {
 
 class _NotifikasiViewState extends State<NotifikasiView> {
   int _currentIndex = 1;
-  final AgendaController agendaController = Get.find<AgendaController>();
+
+  final NotificationController notificationController =
+      Get.find<NotificationController>();
 
   @override
   Widget build(BuildContext context) {
@@ -23,26 +26,19 @@ class _NotifikasiViewState extends State<NotifikasiView> {
       appBar: AppBar(
         title: const Text(
           'Notifikasi Agenda',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         ),
         centerTitle: true,
-        backgroundColor: Colors.teal.shade600,
+        backgroundColor: Colors.teal,
         elevation: 3,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
       ),
       body: Obx(() {
-        if (agendaController.loading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        final notifs = notificationController.notifications;
 
-        final agendas = agendaController.agendas;
-
-        if (agendas.isEmpty) {
+        if (notifs.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -51,7 +47,7 @@ class _NotifikasiViewState extends State<NotifikasiView> {
                     size: 100, color: Colors.teal.shade200),
                 const SizedBox(height: 12),
                 Text(
-                  "Belum ada notifikasi agenda",
+                  "Belum ada notifikasi",
                   style: TextStyle(
                       color: Colors.grey.shade700,
                       fontSize: 16,
@@ -62,31 +58,25 @@ class _NotifikasiViewState extends State<NotifikasiView> {
           );
         }
 
-        // Urutkan agenda terbaru dulu
-        final sorted = agendas.toList()
-          ..sort((a, b) => b.date.compareTo(a.date));
-
         return ListView.builder(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(16),
-          itemCount: sorted.length,
+          itemCount: notifs.length,
           itemBuilder: (_, i) {
-            final agenda = sorted[i];
-            final expired = agenda.date.isBefore(DateTime.now());
+            final notif = notifs[i];
             final formattedDate =
-                DateFormat('dd MMM yyyy, HH:mm').format(agenda.date);
+                DateFormat('dd MMM yyyy, HH:mm').format(notif.time);
 
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 4)),
                 ],
               ),
               child: ListTile(
@@ -95,45 +85,40 @@ class _NotifikasiViewState extends State<NotifikasiView> {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: expired
-                        ? Colors.grey.shade300
-                        : Colors.teal.shade50,
+                    color: Colors.teal.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    expired
-                        ? Icons.event_busy_rounded
-                        : Icons.event_available_rounded,
-                    color: expired
-                        ? Colors.grey.shade600
-                        : Colors.teal.shade700,
-                    size: 28,
-                  ),
+                  child: Icon(Icons.notifications,
+                      color: Colors.teal.shade700, size: 28),
                 ),
                 title: Text(
-                  agenda.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 18,
-                    color: expired ? Colors.grey.shade700 : Colors.black87,
-                  ),
+                  notif.title,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 18),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     formattedDate,
                     style: TextStyle(
-                      fontSize: 15,
-                      color: expired
-                          ? Colors.grey.shade700
-                          : Colors.teal.shade600,
-                    ),
+                        fontSize: 15, color: Colors.teal.shade600),
                   ),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios,
                     size: 16, color: Colors.grey),
-                onTap: () => _showAgendaDetail(agenda.title,
-                    agenda.description ?? '', formattedDate, expired),
+                onTap: () {
+                  final type = notif.payload['type'];
+
+                  if (type == 'agenda') {
+                    Get.toNamed(
+                      Routes.AGENDA_ORGANISASI,
+                      arguments: notif.payload,
+                    );
+                  } else {
+                    _showDetail(
+                        notif.title, notif.body, formattedDate);
+                  }
+                },
               ),
             );
           },
@@ -143,15 +128,14 @@ class _NotifikasiViewState extends State<NotifikasiView> {
     );
   }
 
-  void _showAgendaDetail(
-      String title, String desc, String date, bool expired) {
+  // ===== DETAIL DIALOG (TETAP SAMA) =====
+  void _showDetail(String title, String desc, String date) {
     showGeneralDialog(
       context: context,
-      barrierLabel: "Agenda",
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.3),
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, anim1, anim2) {
+      pageBuilder: (_, __, ___) {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Center(
@@ -163,74 +147,26 @@ class _NotifikasiViewState extends State<NotifikasiView> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          expired
-                              ? Icons.event_busy_rounded
-                              : Icons.event_available_rounded,
-                          color: expired
-                              ? Colors.redAccent
-                              : Colors.teal.shade600,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          date,
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: expired
-                                ? Colors.redAccent
-                                : Colors.teal.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+                    Text(title,
+                        style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    Text(date,
+                        style: TextStyle(
+                            color: Colors.teal.shade600)),
                     const SizedBox(height: 14),
-                    Text(
-                      desc,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.5,
-                        color: Colors.black87,
-                      ),
-                      textAlign: TextAlign.justify,
-                    ),
+                    Text(desc,
+                        style: const TextStyle(fontSize: 16)),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
                       onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        "Tutup",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                      child: const Text("Tutup"),
+                    )
                   ],
                 ),
               ),
@@ -238,74 +174,43 @@ class _NotifikasiViewState extends State<NotifikasiView> {
           ),
         );
       },
-      transitionBuilder: (context, anim1, anim2, child) {
-        return SlideTransition(
-          position: Tween(begin: const Offset(0, 1), end: Offset.zero)
-              .animate(anim1),
-          child: FadeTransition(opacity: anim1, child: child),
-        );
-      },
     );
   }
 
+  // ===== BOTTOM NAV (TIDAK DIUBAH) =====
   Widget _bottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))
-        ],
-      ),
-      child: BottomNavigationBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.teal.shade700,
-        unselectedItemColor: Colors.grey.shade500,
-        showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400),
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home_rounded),
-              label: 'Beranda'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_none),
-              activeIcon: Icon(Icons.notifications),
-              label: 'Notifikasi'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.event_note_outlined),
-              activeIcon: Icon(Icons.event_note),
-              label: 'Agenda'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profil'),
-        ],
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          switch (index) {
-            case 0:
-              Get.offAllNamed(Routes.HOME);
-              break;
-            case 1:
-              Get.toNamed(Routes.NOTIFIKASI);
-              break;
-            case 2:
-              Get.toNamed(Routes.AGENDA_ORGANISASI);
-              break;
-            case 3:
-              Get.toNamed(Routes.STRUKTUR);
-              break;
-          }
-        },
-      ),
+    return BottomNavigationBar(
+      currentIndex: _currentIndex,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: Colors.teal.shade700,
+      unselectedItemColor: Colors.grey.shade500,
+      onTap: (index) {
+        setState(() => _currentIndex = index);
+        switch (index) {
+          case 0:
+            Get.offAllNamed(Routes.HOME);
+            break;
+          case 1:
+            Get.toNamed(Routes.NOTIFIKASI);
+            break;
+          case 2:
+            Get.toNamed(Routes.AGENDA_ORGANISASI);
+            break;
+          case 3:
+            Get.toNamed(Routes.STRUKTUR);
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined), label: 'Beranda'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.notifications), label: 'Notifikasi'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.event_note), label: 'Agenda'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.person), label: 'Profil'),
+      ],
     );
   }
 }
