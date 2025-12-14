@@ -23,6 +23,7 @@ class _RegisterViewState extends State<RegisterView>
   late Animation<double> shake;
 
   bool isError = false;
+  bool isPasswordVisible = false; // 👁️ toggle untuk lihat password
 
   @override
   void initState() {
@@ -180,6 +181,7 @@ class _RegisterViewState extends State<RegisterView>
 
                         const SizedBox(height: 25),
 
+                        // EMAIL
                         _inputField(
                           controller: emailC,
                           hint: "Enter your email",
@@ -189,12 +191,19 @@ class _RegisterViewState extends State<RegisterView>
 
                         const SizedBox(height: 18),
 
+                        // PASSWORD + show/hide
                         _inputField(
                           controller: passC,
                           hint: "Password",
                           icon: Icons.lock_outline,
                           obscure: true,
                           error: isError,
+                          isPassword: true,
+                          togglePassword: () {
+                            setState(() {
+                              isPasswordVisible = !isPasswordVisible;
+                            });
+                          },
                         ),
 
                         const SizedBox(height: 20),
@@ -213,7 +222,6 @@ class _RegisterViewState extends State<RegisterView>
                               onPressed: auth.isLoading.value
                                   ? null
                                   : () async {
-
                                       final email = emailC.text.trim();
                                       final pass = passC.text.trim();
 
@@ -241,7 +249,8 @@ class _RegisterViewState extends State<RegisterView>
                                         return;
                                       }
 
-                                      bool success = await auth.register(email, pass);
+                                      bool success =
+                                          await auth.register(email, pass);
 
                                       if (!success) triggerError();
                                     },
@@ -299,67 +308,79 @@ class _RegisterViewState extends State<RegisterView>
   }
 
   // ==========================
-  // INPUT FIELD (Premium Style)
+  // INPUT FIELD
   // ==========================
   Widget _inputField({
-  required TextEditingController controller,
-  required String hint,
-  required IconData icon,
-  bool obscure = false,
-  bool error = false,
-}) {
-  return AnimatedContainer(
-    duration: const Duration(milliseconds: 300),
-    height: 50,
-    decoration: BoxDecoration(
-      color: error ? Colors.red.shade50 : const Color(0xFFF0F3F6),
-      borderRadius: BorderRadius.circular(30),
-      border: Border.all(
-        color: error ? Colors.red.shade300 : Colors.black26,
-        width: error ? 1.8 : 1.2,
-      ),
-    ),
-    child: Row(
-      children: [
-        const SizedBox(width: 12),
-
-        // ICON — center secara vertical
-        Icon(
-          icon,
-          color: error ? Colors.red.shade400 : Colors.black87,
-          size: 22,
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool obscure = false,
+    bool error = false,
+    bool isPassword = false,
+    VoidCallback? togglePassword,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: 50,
+      decoration: BoxDecoration(
+        color: error ? Colors.red.shade50 : const Color(0xFFF0F3F6),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: error ? Colors.red.shade300 : Colors.black26,
+          width: error ? 1.8 : 1.2,
         ),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 12),
 
-        const SizedBox(width: 12),
+          Icon(
+            icon,
+            color: error ? Colors.red.shade400 : Colors.black87,
+            size: 22,
+          ),
 
-        // TEXTFIELD — center secara vertical
-        Expanded(
-          child: TextField(
-            controller: controller,
-            obscureText: obscure,
-            style: const TextStyle(
-              color: Colors.black87,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(
-                color: Colors.black45,
-                fontWeight: FontWeight.w500,
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: TextField(
+              controller: controller,
+              obscureText: obscure && !isPasswordVisible,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
               ),
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 10), // <== FIX CENTER
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
+                  color: Colors.black45,
+                  fontWeight: FontWeight.w500,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10),
+
+                // 👁️ Lihat/Sembunyikan password
+                suffixIcon: isPassword
+                    ? IconButton(
+                        icon: Icon(
+                          isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.black54,
+                        ),
+                        onPressed: togglePassword,
+                      )
+                    : null,
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
+  }
 
   // ==========================
   // SOCIAL LOGIN BUTTON

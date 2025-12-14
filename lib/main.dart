@@ -1,8 +1,11 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:orgtrack/app/data/models/laporanModel.dart';
+import 'package:orgtrack/app/data/models/program_kerja.dart';
+import 'package:orgtrack/app/ui/programkerja/controllers/programkerja_controller.dart';
 import 'package:orgtrack/services/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -65,7 +68,11 @@ Future<void> main() async {
   Get.put(AgendaController(), permanent: true);
   Get.put(AuthController(), permanent: true);
   Get.put(ThemeController(), permanent: true);
-  Get.put(ProgramKerjaSupabaseController(), permanent: true);
+
+  // ================================
+  //   WAJIB UNTUK PROGRAM KERJA
+  // ================================
+  Get.put(ProgramControllerHttp(), permanent: true);
 
   runApp(const OrgTrackApp());
 }

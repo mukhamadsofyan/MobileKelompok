@@ -35,7 +35,12 @@ class _AgendaViewState extends State<AgendaView> {
         children: [
           // ===================== HEADER =====================
           Container(
-            padding: const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 15),
+            padding: const EdgeInsets.only(
+              top: 45,
+              left: 20,
+              right: 20,
+              bottom: 15,
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: themeC.isDark
@@ -73,8 +78,11 @@ class _AgendaViewState extends State<AgendaView> {
                           color: Colors.white.withOpacity(0.22),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
 
@@ -101,13 +109,25 @@ class _AgendaViewState extends State<AgendaView> {
                         ),
 
                         PopupMenuButton<String>(
-                          icon: const Icon(Icons.filter_alt_rounded, color: Colors.white),
+                          icon: const Icon(
+                            Icons.filter_alt_rounded,
+                            color: Colors.white,
+                          ),
                           color: cardColor,
                           onSelected: (value) => filter.value = value,
                           itemBuilder: (_) => [
-                            const PopupMenuItem(value: "Semua", child: Text("Semua")),
-                            const PopupMenuItem(value: "Mendatang", child: Text("Agenda Mendatang")),
-                            const PopupMenuItem(value: "Selesai", child: Text("Agenda Selesai")),
+                            const PopupMenuItem(
+                              value: "Semua",
+                              child: Text("Semua"),
+                            ),
+                            const PopupMenuItem(
+                              value: "Mendatang",
+                              child: Text("Agenda Mendatang"),
+                            ),
+                            const PopupMenuItem(
+                              value: "Selesai",
+                              child: Text("Agenda Selesai"),
+                            ),
                           ],
                         ),
                       ],
@@ -127,7 +147,7 @@ class _AgendaViewState extends State<AgendaView> {
                         color: Colors.black.withOpacity(0.12),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
-                      )
+                      ),
                     ],
                   ),
                   child: TextField(
@@ -135,11 +155,17 @@ class _AgendaViewState extends State<AgendaView> {
                     onChanged: (_) => setState(() {}),
                     style: TextStyle(color: colorText),
                     decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.search, color: colorText.withOpacity(0.6)),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: colorText.withOpacity(0.6),
+                      ),
                       hintText: "Cari agenda...",
                       border: InputBorder.none,
                       hintStyle: TextStyle(color: colorText.withOpacity(0.5)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                 ),
@@ -151,16 +177,27 @@ class _AgendaViewState extends State<AgendaView> {
           Expanded(
             child: Obx(() {
               if (controller.loading.value) {
-                return const Center(child: CircularProgressIndicator(color: Colors.teal));
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.teal),
+                );
               }
 
-              var list = controller.agendas.where((a) =>
-                  a.title.toLowerCase().contains(searchCtrl.text.toLowerCase())).toList();
+              var list = controller.agendas
+                  .where(
+                    (a) => a.title.toLowerCase().contains(
+                      searchCtrl.text.toLowerCase(),
+                    ),
+                  )
+                  .toList();
 
               if (filter.value == "Mendatang") {
-                list = list.where((a) => a.date.isAfter(DateTime.now())).toList();
+                list = list
+                    .where((a) => a.date.isAfter(DateTime.now()))
+                    .toList();
               } else if (filter.value == "Selesai") {
-                list = list.where((a) => a.date.isBefore(DateTime.now())).toList();
+                list = list
+                    .where((a) => a.date.isBefore(DateTime.now()))
+                    .toList();
               }
 
               if (list.isEmpty) {
@@ -168,10 +205,19 @@ class _AgendaViewState extends State<AgendaView> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.event_busy, size: 90, color: Colors.teal.shade200),
+                      Icon(
+                        Icons.event_busy,
+                        size: 90,
+                        color: Colors.teal.shade200,
+                      ),
                       const SizedBox(height: 10),
-                      Text("Tidak ada agenda",
-                          style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+                      Text(
+                        "Tidak ada agenda",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -209,7 +255,10 @@ class _AgendaViewState extends State<AgendaView> {
           ? FloatingActionButton.extended(
               backgroundColor: Colors.teal.shade700,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text("Tambah", style: TextStyle(color: Colors.white)),
+              label: const Text(
+                "Tambah",
+                style: TextStyle(color: Colors.white),
+              ),
               onPressed: () => _showAgendaSheet(context),
             )
           : null,
@@ -217,8 +266,13 @@ class _AgendaViewState extends State<AgendaView> {
   }
 
   // ================= CARD AGENDA ===================
-  Widget _agendaCard(AgendaOrganisasi a, String date, bool expired,
-      Color cardColor, Color colorText) {
+  Widget _agendaCard(
+    AgendaOrganisasi a,
+    String date,
+    bool expired,
+    Color cardColor,
+    Color colorText,
+  ) {
     final isAdmin = auth.isAdmin;
 
     return Card(
@@ -227,7 +281,10 @@ class _AgendaViewState extends State<AgendaView> {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 14,
+        ),
 
         leading: CircleAvatar(
           radius: 28,
@@ -257,7 +314,10 @@ class _AgendaViewState extends State<AgendaView> {
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   a.description!,
-                  style: TextStyle(fontSize: 13, color: colorText.withOpacity(0.6)),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colorText.withOpacity(0.6),
+                  ),
                 ),
               ),
             const SizedBox(height: 6),
@@ -269,12 +329,14 @@ class _AgendaViewState extends State<AgendaView> {
                   date,
                   style: TextStyle(
                     fontSize: 13,
-                    color: expired ? Colors.grey.shade700 : Colors.teal.shade700,
+                    color: expired
+                        ? Colors.grey.shade700
+                        : Colors.teal.shade700,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
 
@@ -315,7 +377,10 @@ class _AgendaViewState extends State<AgendaView> {
   // ===================== BOTTOM SHEET ADD/EDIT ====================
   void _showAgendaSheet(BuildContext context, {AgendaOrganisasi? agenda}) {
     if (!auth.isAdmin) {
-      Get.snackbar("Akses Ditolak", "Hanya admin yang bisa menambah/edit agenda");
+      Get.snackbar(
+        "Akses Ditolak",
+        "Hanya admin yang bisa menambah/edit agenda",
+      );
       return;
     }
 
@@ -325,10 +390,16 @@ class _AgendaViewState extends State<AgendaView> {
 
     Future pick() async {
       final now = DateTime.now();
+
+      // 🔒 FIX: pastikan initialDate >= firstDate
+      final initialDate = selected.value != null && selected.value!.isAfter(now)
+          ? selected.value!
+          : now;
+
       final d = await showDatePicker(
         context: context,
-        initialDate: selected.value ?? now,
-        firstDate: now,
+        initialDate: initialDate,
+        firstDate: DateTime(2000), // ✅ boleh edit agenda lama
         lastDate: DateTime(2100),
       );
 
@@ -387,10 +458,7 @@ class _AgendaViewState extends State<AgendaView> {
 
               const SizedBox(height: 18),
 
-              TextField(
-                controller: titleC,
-                decoration: _input("Judul Agenda"),
-              ),
+              TextField(controller: titleC, decoration: _input("Judul Agenda")),
 
               const SizedBox(height: 14),
 
@@ -408,7 +476,9 @@ class _AgendaViewState extends State<AgendaView> {
                   label: Text(
                     selected.value == null
                         ? "Pilih Tanggal"
-                        : DateFormat('dd MMM yyyy – HH:mm').format(selected.value!),
+                        : DateFormat(
+                            'dd MMM yyyy – HH:mm',
+                          ).format(selected.value!),
                     style: TextStyle(color: Colors.teal.shade600),
                   ),
                   onPressed: pick,
@@ -431,8 +501,11 @@ class _AgendaViewState extends State<AgendaView> {
 
                   onPressed: () {
                     if (titleC.text.isEmpty || selected.value == null) {
-                      Get.snackbar("Perhatian", "Semua data harus diisi",
-                          backgroundColor: Colors.red.shade100);
+                      Get.snackbar(
+                        "Perhatian",
+                        "Semua data harus diisi",
+                        backgroundColor: Colors.red.shade100,
+                      );
                       return;
                     }
 
@@ -491,8 +564,11 @@ class _AgendaViewState extends State<AgendaView> {
             onPressed: () {
               controller.deleteAgenda(a.id!);
               Get.back();
-              Get.snackbar("Berhasil", "Agenda dihapus",
-                  backgroundColor: Colors.green.shade100);
+              Get.snackbar(
+                "Berhasil",
+                "Agenda dihapus",
+                backgroundColor: Colors.green.shade100,
+              );
             },
             child: const Text("Hapus"),
           ),

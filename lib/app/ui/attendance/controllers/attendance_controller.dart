@@ -1,11 +1,11 @@
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'package:orgtrack/app/data/db/db_helper.dart';
 import '../../../data/models/AgendaModel.dart';
 import '../../../data/models/StrukturalModel.dart';
-import 'package:flutter/material.dart';
 
 class AttendanceController extends GetxController {
-  final SupabaseDB db = SupabaseDB();     // <-- FIX: gunakan SupabaseDB
+  final SupabaseDB db = SupabaseDB();
   final AgendaOrganisasi agenda;
 
   AttendanceController({required this.agenda});
@@ -18,61 +18,77 @@ class AttendanceController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    // 🔐 GUARD WAJIB (FIX CRASH)
+    if (agenda.id == null) {
+      Get.back();
+      Get.snackbar(
+        "Error",
+        "Agenda tidak memiliki ID",
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
     loadAttendanceData();
   }
 
-  /// 🔄 Muat ulang data absensi dari Supabase
+  /// 🔄 Load data absensi
   Future<void> loadAttendanceData() async {
+    if (agenda.id == null) return;
+
     loading.value = true;
 
-    // Ambil semua data struktural dari Supabase
+    // Ambil struktural
     final list = await db.getStruktural();
     strukturalList.assignAll(list);
 
-    // Ambil data absensi berdasarkan ID agenda
+    // Ambil absensi
     final rows = await db.getAttendanceByAgenda(agenda.id!);
 
     final map = <int, bool>{};
     for (var row in rows) {
-      map[row['struktural_id'] as int] =
-          (row['present'] == 1 || row['present'] == true);
+      final sid = row['struktural_id'];
+      if (sid != null) {
+        map[sid as int] =
+            (row['present'] == 1 || row['present'] == true);
+      }
     }
 
     attendanceMap.assignAll(map);
 
-    // Default: kalau belum ada → false
+    // Default false
     for (var s in strukturalList) {
-      attendanceMap.putIfAbsent(s.id!, () => false);
+      if (s.id != null) {
+        attendanceMap.putIfAbsent(s.id!, () => false);
+      }
     }
 
-    // Auto-lock kalau tanggal sudah lewat
-    final now = DateTime.now();
-    if (agenda.date.isBefore(now)) {
-      isLocked.value = true;
-    }
+    // Auto lock jika lewat tanggal
+    isLocked.value = agenda.date.isBefore(DateTime.now());
 
     loading.value = false;
   }
 
-  /// 🔁 Refresh manual
+  /// 🔁 Refresh
   Future<void> refreshData() async {
     await loadAttendanceData();
   }
 
-  /// 👆 Toggle hadir / tidak hadir
-  Future<void> toggleAttendance(int strukturalId) async {
+  /// 👆 Toggle hadir
+  Future<void> toggleAttendance(int? strukturalId) async {
     if (isLocked.value) return;
+    if (strukturalId == null || agenda.id == null) return;
 
     final current = attendanceMap[strukturalId] ?? false;
     attendanceMap[strukturalId] = !current;
 
-    // Simpan ke Supabase
-    await db.markAttendance(agenda.id!, strukturalId, !current);
-
-    // Refresh agar sinkron
-    Future.delayed(const Duration(milliseconds: 250), () async {
-      await refreshData();
-    });
+    await db.markAttendance(
+      agenda.id!,
+      strukturalId,
+      !current,
+    );
   }
 
   /// 🔐 Kunci absensi
@@ -90,14 +106,14 @@ class AttendanceController extends GetxController {
     );
   }
 
-  /// 🔓 Admin buka kunci absensi
+  /// 🔓 Admin buka kunci
   Future<void> unlockAttendance() async {
     isLocked.value = false;
     await refreshData();
 
     Get.snackbar(
       'Kunci Dibuka',
-      'Absensi sudah bisa diedit kembali.',
+      'Absensi bisa diedit kembali.',
       backgroundColor: Colors.green.shade600,
       colorText: Colors.white,
       icon: const Icon(Icons.lock_open, color: Colors.white),

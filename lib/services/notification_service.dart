@@ -19,6 +19,9 @@ class NotificationService extends GetxService {
     sound: RawResourceAndroidNotificationSound('notif_sound'),
   );
 
+  // =============================================================
+  // INIT
+  // =============================================================
   Future<NotificationService> init() async {
     // Permission
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
@@ -44,19 +47,19 @@ class NotificationService extends GetxService {
             AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(_channel);
 
-    // FOREGROUND
+    // ================= FOREGROUND =================
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('[FCM][FOREGROUND] ${message.data}');
       _showLocalNotif(message);
     });
 
-    // BACKGROUND (klik notif)
+    // ================= BACKGROUND (CLICK) =================
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       print('[FCM][OPENED] ${message.data}');
       _navigate(message.data);
     });
 
-    // TERMINATED
+    // ================= TERMINATED =================
     final initialMsg = await _fcm.getInitialMessage();
     if (initialMsg != null) {
       print('[FCM][TERMINATED] ${initialMsg.data}');
@@ -69,6 +72,9 @@ class NotificationService extends GetxService {
     return this;
   }
 
+  // =============================================================
+  // SHOW NOTIF FROM FCM (FOREGROUND)
+  // =============================================================
   void _showLocalNotif(RemoteMessage message) async {
     final notif = message.notification;
     if (notif == null) return;
@@ -91,19 +97,56 @@ class NotificationService extends GetxService {
     );
   }
 
+  // =============================================================
+  // TEST NOTIFICATION (UNTUK MODUL 6)
+  // =============================================================
+  Future<void> showLocalTestNotification({
+    required String title,
+    required String body,
+    required Map<String, dynamic> payload,
+  }) async {
+    await _localNotif.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channel.id,
+          _channel.name,
+          channelDescription: _channel.description,
+          importance: Importance.max,
+          priority: Priority.high,
+          sound: _channel.sound,
+        ),
+      ),
+      payload: jsonEncode(payload),
+    );
+  }
+
+  // =============================================================
+  // HANDLE PAYLOAD
+  // =============================================================
   void _handlePayload(String payload) {
     final data = jsonDecode(payload);
     _navigate(data);
   }
 
+  // =============================================================
+  // NAVIGATION BASED ON PAYLOAD
+  // =============================================================
   void _navigate(Map<String, dynamic> data) {
     final type = data['type'];
 
     if (type == 'agenda') {
-      Get.toNamed(Routes.AGENDA_ORGANISASI,
-          arguments: {'id': data['agenda_id']});
-    } else {
-      // Get.toNamed(Routes.NOTIFICATION_LIST);
+      Get.toNamed(
+        Routes.AGENDA_ORGANISASI,
+        arguments: {'id': data['agenda_id']},
+      );
+    } else if (type == 'attendance') {
+      Get.toNamed(
+        Routes.ATTENDANCE_AGENDA,
+        arguments: {'action': data['action']},
+      );
     }
   }
 }

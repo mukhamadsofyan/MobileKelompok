@@ -18,4 +18,6 @@ abstract class Routes {
   static const REGISTER = '/register';
   static const WELCOME = '/welcome';
   static const PROFILE = '/profile';
+  static const LOKASI = '/lokasi';
+  static const PENGUMUMAN = '/pengumuman';
 }

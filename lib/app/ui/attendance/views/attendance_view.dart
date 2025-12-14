@@ -3,480 +3,413 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/models/AgendaModel.dart';
 import '../controllers/attendance_controller.dart';
+import '../../../controllers/auth_controller.dart';
 
 class AttendanceView extends StatelessWidget {
   final AgendaOrganisasi agenda;
   const AttendanceView({Key? key, required this.agenda}) : super(key: key);
 
+  static const Set<String> _unlockRoles = {"admin"};
+
+  // ================= TAMBAHAN (NOTIF HANDLER) =================
+  void _handleNotificationAction() {
+    if (Get.arguments is Map) {
+      final args = Get.arguments as Map;
+      final action = args['action'];
+
+      if (action == 'checkin') {
+        Get.snackbar(
+          "Pengingat Absensi",
+          "Silakan lakukan CHECK-IN",
+          backgroundColor: Colors.teal,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+      }
+
+      if (action == 'checkout') {
+        Get.snackbar(
+          "Pengingat Absensi",
+          "Jangan lupa CHECK-OUT",
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+      }
+    }
+  }
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(AttendanceController(agenda: agenda));
+    // 🔔 DIPANGGIL SETELAH BUILD SELESAI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleNotificationAction();
+    });
+
+    final AttendanceController controller =
+        Get.put(AttendanceController(agenda: agenda));
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ================= COLOR SYSTEM =================
+    final bg = isDark ? const Color(0xFF0E1116) : const Color(0xFFF4F6FA);
+    final textPrimary =
+        isDark ? Colors.white.withOpacity(0.92) : const Color(0xFF121826);
+    final textSecondary = isDark ? Colors.white70 : Colors.black54;
+    final textMuted = isDark ? Colors.white38 : Colors.black38;
+    final teal1 = isDark ? Colors.teal.shade700 : Colors.teal.shade500;
+    final teal2 = isDark ? Colors.teal.shade900 : Colors.teal.shade800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: bg,
+
+      // ================= APP BAR =================
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
+        backgroundColor: Colors.transparent,
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.teal.shade400, Colors.teal.shade700],
+              colors: [teal1, teal2],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
         ),
-        title: Text(
-          "Absensi: ${agenda.title}",
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            letterSpacing: 0.5,
-          ),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Absensi Agenda",
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withOpacity(0.75),
+              ),
+            ),
+            Text(
+              agenda.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
         actions: [
-          // 🔐 Tombol Admin Override
-          Obx(() => IconButton(
-                tooltip: controller.isLocked.value
-                    ? "Buka kunci absensi (Admin)"
-                    : "Absensi masih terbuka",
-                icon: Icon(
-                  controller.isLocked.value ? Icons.lock : Icons.lock_open,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  if (controller.isLocked.value) {
-                    _showAdminUnlockDialog(controller);
-                  } else {
-                    Get.snackbar(
-                      "Info",
-                      "Absensi masih terbuka.",
-                      backgroundColor: Colors.teal,
-                      colorText: Colors.white,
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  }
-                },
-              )),
+          Obx(() {
+            final locked = controller.isLocked.value;
+            final isAdmin = _getCurrentRole() == "admin";
+
+            return IconButton(
+              tooltip: locked
+                  ? (isAdmin
+                      ? "Buka kunci absensi"
+                      : "Hanya admin yang dapat membuka")
+                  : "Absensi terbuka",
+              icon: Icon(
+                locked ? Icons.lock_rounded : Icons.lock_open_rounded,
+                color:
+                    isAdmin ? Colors.white : Colors.white.withOpacity(0.5),
+              ),
+              onPressed: (locked && isAdmin)
+                  ? () => _unlockDialog(controller, isDark)
+                  : null,
+            );
+          }),
         ],
       ),
+
+      // ================= BODY =================
       body: Obx(() {
         if (controller.loading.value) {
-          return const Center(
-              child: CircularProgressIndicator(color: Colors.teal));
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (controller.strukturalList.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
-              'Belum ada anggota struktural',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              "Belum ada anggota struktural",
+              style: TextStyle(color: textMuted),
             ),
           );
         }
 
         return RefreshIndicator(
-          color: Colors.teal,
-          onRefresh: () async => controller.refreshData(),
+          onRefresh: controller.refreshData,
           child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
             itemCount: controller.strukturalList.length,
-            itemBuilder: (_, index) {
-              final s = controller.strukturalList[index];
+            itemBuilder: (_, i) {
+              final s = controller.strukturalList[i];
               final hadir = controller.attendanceMap[s.id] ?? false;
-              return _AnimatedMemberCard(
-                index: index,
-                name: s.name,
-                role: s.role,
-                hadir: hadir,
-                locked: controller.isLocked.value,
-                onChanged: (v) {
-                  if (!controller.isLocked.value && v != null) {
-                    controller.toggleAttendance(s.id!);
-                  }
-                },
-                onTap: () {
-                  if (!controller.isLocked.value) {
-                    _showMemberDetail(context, controller, s);
-                  }
-                },
+
+              return _AnimatedItem(
+                index: i,
+                child: _GlassCard(
+                  isDark: isDark,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    title: Text(
+                      s.name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: textPrimary,
+                      ),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        s.role,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _StatusBadge(hadir: hadir),
+                        const SizedBox(width: 12),
+                        AnimatedCheckbox(
+                          value: hadir,
+                          enabled: !controller.isLocked.value,
+                          onChanged: (_) =>
+                              controller.toggleAttendance(s.id),
+                          isDark: isDark,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               );
             },
           ),
         );
       }),
-      bottomNavigationBar: Obx(() => _BottomSaveBar(
-            locked: controller.isLocked.value,
-            onSave: () {
-              controller.lockAttendance(); // 🔐 Kunci absensi
-              Get.snackbar(
-                'Absensi Disimpan',
-                'Data kehadiran berhasil dikunci!',
-                backgroundColor: Colors.teal.shade600,
-                colorText: Colors.white,
-                icon: const Icon(Icons.lock, color: Colors.white),
-                snackPosition: SnackPosition.BOTTOM,
-                margin: const EdgeInsets.all(16),
-              );
-            },
-          )),
+
+      // ================= BOTTOM BAR =================
+      bottomNavigationBar: Obx(
+        () => _BottomSaveBar(
+          locked: controller.isLocked.value,
+          onSave: controller.lockAttendance,
+          isDark: isDark,
+        ),
+      ),
     );
   }
 
-  // 📌 Dialog untuk membuka kunci ulang oleh admin
-  void _showAdminUnlockDialog(AttendanceController c) {
-    final TextEditingController pinCtrl = TextEditingController();
-
+  void _unlockDialog(AttendanceController c, bool isDark) {
     Get.dialog(
       AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text(
-          'Buka Kunci Absensi',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Masukkan kode admin untuk membuka kunci absensi:"),
-            const SizedBox(height: 12),
-            TextField(
-              controller: pinCtrl,
-              obscureText: true,
-              decoration: InputDecoration(
-                hintText: 'Masukkan PIN admin',
-                prefixIcon: const Icon(Icons.lock_outline),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text("Buka Kunci Absensi"),
+        content: const Text(
+          "Absensi akan dibuka dan dapat diubah kembali.",
         ),
         actions: [
-          TextButton(
-            onPressed: Get.back,
-            child: const Text("Batal"),
-          ),
+          TextButton(onPressed: Get.back, child: const Text("Batal")),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
             onPressed: () {
-              if (pinCtrl.text == "1234") {
-                c.unlockAttendance();
-                Get.back();
-                Get.snackbar(
-                  'Berhasil',
-                  'Kunci absensi telah dibuka oleh admin.',
-                  backgroundColor: Colors.green.shade600,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM,
-                );
-              } else {
-                Get.snackbar(
-                  'Gagal',
-                  'PIN admin salah.',
-                  backgroundColor: Colors.red.shade600,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM,
-                );
-              }
+              c.unlockAttendance();
+              Get.back();
+              Get.snackbar(
+                "Berhasil",
+                "Absensi berhasil dibuka",
+                backgroundColor:
+                    isDark ? const Color(0xFF0F2A23) : Colors.teal,
+                colorText: Colors.white,
+              );
             },
-            child: const Text("Buka Kunci"),
+            child: const Text("Buka"),
           ),
         ],
       ),
     );
   }
 
-  // 📌 Bottom Sheet detail anggota (sama seperti versi kamu)
-  void _showMemberDetail(
-      BuildContext context, AttendanceController c, dynamic s) {
-    final hadir = c.attendanceMap[s.id] ?? false;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.45,
-        maxChildSize: 0.8,
-        minChildSize: 0.3,
-        builder: (_, scrollController) => ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              color: Colors.white.withOpacity(0.85),
-              padding: const EdgeInsets.all(24),
-              child: ListView(
-                controller: scrollController,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 60,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: Colors.teal.shade200,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  CircleAvatar(
-                    radius: 45,
-                    backgroundColor: Colors.teal.shade100,
-                    child: Text(
-                      s.name[0].toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      s.name,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Center(
-                    child: Text(
-                      s.role,
-                      style: TextStyle(
-                          color: Colors.grey.shade600, fontSize: 14),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Divider(color: Colors.grey.shade300, thickness: 1),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Status Kehadiran",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.teal.shade700,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _StatusButton(
-                        icon: Icons.check_circle,
-                        label: "Hadir",
-                        color: Colors.green,
-                        active: hadir == true,
-                        onTap: () {
-                          c.toggleAttendance(s.id!);
-                          Get.back();
-                        },
-                      ),
-                      _StatusButton(
-                        icon: Icons.cancel_rounded,
-                        label: "Alpa",
-                        color: Colors.red,
-                        active: hadir == false,
-                        onTap: () {
-                          c.attendanceMap[s.id] = false;
-                          c.attendanceMap.refresh();
-                          Get.back();
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+  String _getCurrentRole() {
+    if (Get.isRegistered<AuthController>()) {
+      return Get.find<AuthController>()
+          .userRole
+          .value
+          .toLowerCase();
+    }
+    return "member";
   }
 }
 
-// 🧩 Animated Card
-class _AnimatedMemberCard extends StatelessWidget {
-  final int index;
-  final String name;
-  final String role;
-  final bool hadir;
-  final bool locked;
-  final ValueChanged<bool?> onChanged;
-  final VoidCallback onTap;
+// ================= GLASS CARD =================
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+  final bool isDark;
 
-  const _AnimatedMemberCard({
-    required this.index,
-    required this.name,
-    required this.role,
-    required this.hadir,
-    required this.locked,
-    required this.onChanged,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: locked ? 0.6 : 1,
-      child: GestureDetector(
-        onTap: locked ? null : onTap,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.teal.withOpacity(0.08),
-                blurRadius: 10,
-                offset: const Offset(2, 6),
-              ),
-            ],
-          ),
-          child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            leading: CircleAvatar(
-              backgroundColor:
-                  hadir ? Colors.green.shade100 : Colors.grey.shade300,
-              radius: 28,
-              child: Icon(
-                hadir ? Icons.check_rounded : Icons.close_rounded,
-                color: hadir ? Colors.green : Colors.grey,
-                size: 26,
-              ),
-            ),
-            title: Text(
-              name,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 16.5,
-                color: Colors.black87,
-              ),
-            ),
-            subtitle: Text(
-              role,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 13.5,
-              ),
-            ),
-            trailing: Transform.scale(
-              scale: 1.2,
-              child: Checkbox(
-                value: hadir,
-                activeColor: Colors.teal,
-                onChanged: locked ? null : onChanged,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// 🧩 Status Button (sama seperti sebelumnya)
-class _StatusButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _StatusButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: active ? color.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: active ? color.withOpacity(0.6) : Colors.grey.withOpacity(0.3),
-            width: 1.3,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: color.withOpacity(0.9),
-                fontWeight: FontWeight.w600,
-                fontSize: 13.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// 🧩 Bottom Save Bar
-class _BottomSaveBar extends StatelessWidget {
-  final bool locked;
-  final VoidCallback onSave;
-  const _BottomSaveBar({required this.locked, required this.onSave});
+  const _GlassCard({required this.child, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 72,
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.teal.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+      margin: const EdgeInsets.only(bottom: 14),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Center(
-            child: ElevatedButton.icon(
-              onPressed: locked ? null : onSave,
-              icon: Icon(
-                locked ? Icons.lock : Icons.save_rounded,
-                color: Colors.white,
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.06)
+                  : Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.15),
               ),
-              label: Text(
-                locked ? "Absensi Terkunci" : "Simpan & Kunci",
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    locked ? Colors.grey.shade500 : Colors.teal.shade600,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 4,
-              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ================= STATUS BADGE =================
+class _StatusBadge extends StatelessWidget {
+  final bool hadir;
+  const _StatusBadge({required this.hadir});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: hadir
+            ? Colors.teal.withOpacity(0.15)
+            : Colors.red.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        hadir ? "HADIR" : "TIDAK HADIR",
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
+          color: hadir ? Colors.teal : Colors.red,
+        ),
+      ),
+    );
+  }
+}
+
+// ================= ANIMATION =================
+class _AnimatedItem extends StatelessWidget {
+  final int index;
+  final Widget child;
+  const _AnimatedItem({required this.index, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 280 + (index * 40)),
+      curve: Curves.easeOutCubic,
+      builder: (_, v, __) => Opacity(
+        opacity: v,
+        child: Transform.translate(
+          offset: Offset(0, (1 - v) * 10),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+// ================= CHECKBOX =================
+class AnimatedCheckbox extends StatelessWidget {
+  final bool value;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+  final bool isDark;
+
+  const AnimatedCheckbox({
+    Key? key,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+    required this.isDark,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: enabled ? () => onChanged(!value) : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: value
+              ? Colors.teal
+              : (isDark
+                  ? Colors.white.withOpacity(0.06)
+                  : Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          value ? Icons.check_rounded : Icons.close_rounded,
+          size: 18,
+          color:
+              value ? Colors.white : (isDark ? Colors.white38 : Colors.black38),
+        ),
+      ),
+    );
+  }
+}
+
+// ================= BOTTOM BAR =================
+class _BottomSaveBar extends StatelessWidget {
+  final bool locked;
+  final VoidCallback onSave;
+  final bool isDark;
+
+  const _BottomSaveBar({
+    required this.locked,
+    required this.onSave,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        height: 58,
+        child: ElevatedButton.icon(
+          icon: Icon(
+            locked ? Icons.lock_rounded : Icons.save_rounded,
+            size: 22,
+          ),
+          label: Text(
+            locked ? "Absensi Terkunci" : "Simpan & Kunci Absensi",
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          onPressed: locked ? null : onSave,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: locked
+                ? (isDark ? Colors.white12 : Colors.grey.shade400)
+                : Colors.teal.shade600,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
         ),

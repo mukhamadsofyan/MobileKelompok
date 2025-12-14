@@ -269,7 +269,7 @@ class KeuanganView extends StatelessWidget {
   }
 
   // ===================================================================
-  // TRANSACTION TILE
+  // TRANSACTION TILE (UPDATED with TITIK TIGA)
   // ===================================================================
   Widget _transactionTile(
     Keuanganmodel k,
@@ -283,36 +283,78 @@ class KeuanganView extends StatelessWidget {
       color: cardColor,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: ListTile(
-        leading: CircleAvatar(
-          radius: 26,
-          backgroundColor: (k.type == "Pemasukan" ? Colors.green : Colors.red)
-              .withOpacity(0.15),
-          child: Icon(
-            k.type == "Pemasukan" ? Icons.arrow_downward : Icons.arrow_upward,
-            color: k.type == "Pemasukan" ? Colors.green : Colors.red,
+      child: Stack(
+        children: [
+          // MAIN TILE
+          ListTile(
+            leading: CircleAvatar(
+              radius: 26,
+              backgroundColor: (k.type == "Pemasukan" ? Colors.green : Colors.red)
+                  .withOpacity(0.15),
+              child: Icon(
+                k.type == "Pemasukan" ? Icons.arrow_downward : Icons.arrow_upward,
+                color: k.type == "Pemasukan" ? Colors.green : Colors.red,
+              ),
+            ),
+            title: Text(
+              k.title,
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 15, color: textColor),
+            ),
+            subtitle: Text(
+              "${k.type} • $date",
+              style: TextStyle(color: textColor.withOpacity(0.6)),
+            ),
+            trailing: Text(
+              "Rp ${k.amount.toStringAsFixed(0)}",
+              style: TextStyle(
+                color: k.type == "Pemasukan" ? Colors.green : Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: () => _showDetailDialog(k),
           ),
-        ),
-        title: Text(
-          k.title,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor),
-        ),
-        subtitle: Text(
-          "${k.type} • $date",
-          style: TextStyle(color: textColor.withOpacity(0.6)),
-        ),
-        trailing: Text(
-          "Rp ${k.amount.toStringAsFixed(0)}",
-          style: TextStyle(
-            color: k.type == "Pemasukan" ? Colors.green : Colors.red,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        onTap: () => _showDetailDialog(k),
-        onLongPress: auth.userRole.value == "admin"
-            ? () => _showAddDialog(Get.context!, c, k)
-            : null,
+
+          // TITIK TIGA ADMIN ONLY
+          if (auth.userRole.value == "admin")
+            Positioned(
+              top: 4,
+              right: 4,
+              child: PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert, color: textColor.withOpacity(0.7)),
+                onSelected: (v) {
+                  if (v == 'edit') {
+                    _showAddDialog(Get.context!, c, k);
+                  } else if (v == 'delete') {
+                    _confirmDelete(k, c);
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text("Edit")),
+                  PopupMenuItem(value: 'delete', child: Text("Hapus")),
+                ],
+              ),
+            ),
+        ],
       ),
+    );
+  }
+
+  // ===================================================================
+  // DELETE CONFIRM
+  // ===================================================================
+  void _confirmDelete(Keuanganmodel k, KeuanganController c) {
+    Get.defaultDialog(
+      title: "Hapus Transaksi?",
+      middleText: "Yakin ingin menghapus '${k.title}'?",
+      textCancel: "Batal",
+      textConfirm: "Hapus",
+      confirmTextColor: Colors.white,
+      buttonColor: Colors.red,
+      onConfirm: () async {
+        await c.deleteKeuangan(k.id!);
+        Get.back();
+      },
     );
   }
 
