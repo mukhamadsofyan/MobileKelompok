@@ -30,7 +30,12 @@ class KeuanganView extends StatelessWidget {
         children: [
           // ===================== HEADER ==========================
           Container(
-            padding: const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 12),
+            padding: const EdgeInsets.only(
+              top: 45,
+              left: 20,
+              right: 20,
+              bottom: 12,
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -56,7 +61,7 @@ class KeuanganView extends StatelessWidget {
                   color: Colors.black.withOpacity(themeC.isDark ? 0.45 : 0.16),
                   blurRadius: 12,
                   offset: const Offset(0, 3),
-                )
+                ),
               ],
             ),
 
@@ -74,8 +79,11 @@ class KeuanganView extends StatelessWidget {
                           color: Colors.white.withOpacity(0.22),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
 
@@ -101,17 +109,26 @@ class KeuanganView extends StatelessWidget {
                         ),
 
                         PopupMenuButton<String>(
-                          icon: const Icon(Icons.filter_alt_rounded, color: Colors.white),
+                          icon: const Icon(
+                            Icons.filter_alt_rounded,
+                            color: Colors.white,
+                          ),
                           color: cardColor,
                           onSelected: (v) => filter.value = v,
                           itemBuilder: (_) => const [
                             PopupMenuItem(value: "Semua", child: Text("Semua")),
-                            PopupMenuItem(value: "Pemasukan", child: Text("Pemasukan")),
-                            PopupMenuItem(value: "Pengeluaran", child: Text("Pengeluaran")),
+                            PopupMenuItem(
+                              value: "Pemasukan",
+                              child: Text("Pemasukan"),
+                            ),
+                            PopupMenuItem(
+                              value: "Pengeluaran",
+                              child: Text("Pengeluaran"),
+                            ),
                           ],
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
 
@@ -126,9 +143,27 @@ class KeuanganView extends StatelessWidget {
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _summaryCard("Saldo", saldo, Colors.teal, cardColor, colorText),
-                      _summaryCard("Masuk", pemasukan, Colors.green, cardColor, colorText),
-                      _summaryCard("Keluar", pengeluaran, Colors.red, cardColor, colorText),
+                      _summaryCard(
+                        "Saldo",
+                        saldo,
+                        Colors.teal,
+                        cardColor,
+                        colorText,
+                      ),
+                      _summaryCard(
+                        "Masuk",
+                        pemasukan,
+                        Colors.green,
+                        cardColor,
+                        colorText,
+                      ),
+                      _summaryCard(
+                        "Keluar",
+                        pengeluaran,
+                        Colors.red,
+                        cardColor,
+                        colorText,
+                      ),
                     ],
                   );
                 }),
@@ -142,7 +177,9 @@ class KeuanganView extends StatelessWidget {
           Expanded(
             child: Obx(() {
               final list = c.keuanganList
-                  .where((k) => filter.value == 'Semua' || k.type == filter.value)
+                  .where(
+                    (k) => filter.value == 'Semua' || k.type == filter.value,
+                  )
                   .toList();
 
               return RefreshIndicator(
@@ -153,7 +190,9 @@ class KeuanganView extends StatelessWidget {
                     // GRAFIK
                     Card(
                       color: cardColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
                       elevation: 2,
                       child: Padding(
                         padding: const EdgeInsets.all(18),
@@ -192,14 +231,25 @@ class KeuanganView extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 40),
                               child: Text(
                                 "Belum ada transaksi",
-                                style: TextStyle(color: colorText.withOpacity(0.6)),
+                                style: TextStyle(
+                                  color: colorText.withOpacity(0.6),
+                                ),
                               ),
                             ),
                           )
                         : Column(
                             children: list.map((k) {
-                              final date = DateFormat('dd MMM yyyy').format(k.date);
-                              return _transactionTile(k, date, c, auth, cardColor, colorText);
+                              final date = DateFormat(
+                                'dd MMM yyyy',
+                              ).format(k.date);
+                              return _transactionTile(
+                                k,
+                                date,
+                                c,
+                                auth,
+                                cardColor,
+                                colorText,
+                              );
                             }).toList(),
                           ),
                   ],
@@ -214,7 +264,10 @@ class KeuanganView extends StatelessWidget {
           ? FloatingActionButton.extended(
               backgroundColor: Colors.teal.shade600,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text("Tambah", style: TextStyle(color: Colors.white)),
+              label: const Text(
+                "Tambah",
+                style: TextStyle(color: Colors.white),
+              ),
               onPressed: () => _showAddDialog(context, c),
             )
           : null,
@@ -243,16 +296,19 @@ class KeuanganView extends StatelessWidget {
               color: color.withOpacity(0.20),
               blurRadius: 8,
               offset: const Offset(0, 4),
-            )
+            ),
           ],
         ),
         child: Column(
           children: [
-            Text(title,
-                style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14)),
+            Text(
+              title,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+              ),
+            ),
             const SizedBox(height: 6),
             Text(
               "Rp ${value.toStringAsFixed(0)}",
@@ -261,7 +317,7 @@ class KeuanganView extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -289,17 +345,23 @@ class KeuanganView extends StatelessWidget {
           ListTile(
             leading: CircleAvatar(
               radius: 26,
-              backgroundColor: (k.type == "Pemasukan" ? Colors.green : Colors.red)
-                  .withOpacity(0.15),
+              backgroundColor:
+                  (k.type == "Pemasukan" ? Colors.green : Colors.red)
+                      .withOpacity(0.15),
               child: Icon(
-                k.type == "Pemasukan" ? Icons.arrow_downward : Icons.arrow_upward,
+                k.type == "Pemasukan"
+                    ? Icons.arrow_downward
+                    : Icons.arrow_upward,
                 color: k.type == "Pemasukan" ? Colors.green : Colors.red,
               ),
             ),
             title: Text(
               k.title,
               style: TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 15, color: textColor),
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: textColor,
+              ),
             ),
             subtitle: Text(
               "${k.type} • $date",
@@ -326,7 +388,7 @@ class KeuanganView extends StatelessWidget {
                   if (v == 'edit') {
                     _showAddDialog(Get.context!, c, k);
                   } else if (v == 'delete') {
-                    _confirmDelete(k, c);
+                    _confirmDeleteKeuangan(k, c);
                   }
                 },
                 itemBuilder: (_) => const [
@@ -343,18 +405,139 @@ class KeuanganView extends StatelessWidget {
   // ===================================================================
   // DELETE CONFIRM
   // ===================================================================
-  void _confirmDelete(Keuanganmodel k, KeuanganController c) {
-    Get.defaultDialog(
-      title: "Hapus Transaksi?",
-      middleText: "Yakin ingin menghapus '${k.title}'?",
-      textCancel: "Batal",
-      textConfirm: "Hapus",
-      confirmTextColor: Colors.white,
-      buttonColor: Colors.red,
-      onConfirm: () async {
-        await c.deleteKeuangan(k.id!);
-        Get.back();
-      },
+  void _confirmDeleteKeuangan(Keuanganmodel k, KeuanganController c) {
+    // ================= VALIDASI AKSES =================
+    if (Get.find<AuthController>().userRole.value != "admin") {
+      Get.snackbar(
+        "Akses Ditolak",
+        "Hanya admin yang bisa menghapus transaksi",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 16,
+        icon: const Icon(Icons.block, color: Colors.white),
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+
+    // ================= DIALOG KONFIRMASI =================
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ================= ICON =================
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.delete_forever_rounded,
+                  size: 36,
+                  color: Colors.red.shade700,
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              // ================= TITLE =================
+              const Text(
+                "Hapus Transaksi",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 10),
+
+              // ================= CONTENT =================
+              Text(
+                "Apakah kamu yakin ingin menghapus transaksi\n“${k.title}” ?",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  height: 1.4,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+
+              const SizedBox(height: 26),
+
+              // ================= ACTION BUTTONS =================
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(color: Colors.grey.shade400),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        "Batal",
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        // TUTUP DIALOG DULU
+                        Get.back();
+
+                        await c.deleteKeuangan(k.id!);
+
+                        // ================= NOTIFIKASI BERHASIL =================
+                        Get.snackbar(
+                          "Berhasil",
+                          "Transaksi berhasil dihapus",
+                          snackPosition: SnackPosition.TOP,
+                          backgroundColor: Colors.green.shade600,
+                          colorText: Colors.white,
+                          margin: const EdgeInsets.all(16),
+                          borderRadius: 16,
+                          icon: const Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                          ),
+                          duration: const Duration(seconds: 2),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        "Hapus",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
     );
   }
 
@@ -372,21 +555,40 @@ class KeuanganView extends StatelessWidget {
         gridData: const FlGridData(show: false),
 
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (v, _) {
                 const months = [
-                  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-                  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+                  'Jan',
+                  'Feb',
+                  'Mar',
+                  'Apr',
+                  'Mei',
+                  'Jun',
+                  'Jul',
+                  'Agu',
+                  'Sep',
+                  'Okt',
+                  'Nov',
+                  'Des',
                 ];
                 if (v < 0 || v > 11) return const SizedBox.shrink();
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(months[v.toInt()], style: const TextStyle(fontSize: 10)),
+                  child: Text(
+                    months[v.toInt()],
+                    style: const TextStyle(fontSize: 10),
+                  ),
                 );
               },
             ),
@@ -410,69 +612,302 @@ class KeuanganView extends StatelessWidget {
   // ===================================================================
   // ADD / EDIT DIALOG
   // ===================================================================
-  void _showAddDialog(BuildContext context, KeuanganController c,
-      [Keuanganmodel? old]) {
+  void _showAddDialog(
+    BuildContext context,
+    KeuanganController c, [
+    Keuanganmodel? old,
+  ]) {
     final titleC = TextEditingController(text: old?.title ?? '');
     final amountC = TextEditingController(text: old?.amount.toString() ?? '');
     final type = RxString(old?.type ?? "Pemasukan");
     final date = Rx<DateTime?>(old?.date);
 
-    Get.defaultDialog(
-      title: old == null ? "Tambah Transaksi" : "Edit Transaksi",
-      content: Column(
-        children: [
-          TextField(controller: titleC, decoration: const InputDecoration(labelText: "Judul")),
-          TextField(controller: amountC, decoration: const InputDecoration(labelText: "Jumlah")),
-          const SizedBox(height: 8),
+    Get.bottomSheet(
+      DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.55,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Get.theme.cardColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
+            ),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ================= DRAG HANDLE =================
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
 
-          Obx(() => TextButton(
-                onPressed: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: date.value ?? DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100),
-                  );
-                  if (d != null) date.value = d;
-                },
-                child: Text(
-                  date.value == null
-                      ? "Pilih Tanggal"
-                      : DateFormat('dd MMM yyyy').format(date.value!),
-                ),
-              )),
-          Obx(() => DropdownButton(
-                value: type.value,
-                items: ["Pemasukan", "Pengeluaran"]
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                    .toList(),
-                onChanged: (v) => type.value = v!,
-              )),
-        ],
+                  // ================= HEADER =================
+                  Row(
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Icon(
+                          old == null
+                              ? Icons.add_chart_rounded
+                              : Icons.edit_rounded,
+                          color: Colors.teal,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            old == null ? "Tambah Transaksi" : "Edit Transaksi",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "Lengkapi data transaksi dengan benar",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ================= JUDUL =================
+                  const Text(
+                    "Judul",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: titleC,
+                    decoration: InputDecoration(
+                      hintText: "Contoh: Kas Bulanan",
+                      prefixIcon: const Icon(Icons.title_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // ================= JUMLAH =================
+                  const Text(
+                    "Jumlah",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: amountC,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: "Contoh: 50000",
+                      prefixIcon: const Icon(Icons.payments_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // ================= TANGGAL =================
+                  const Text(
+                    "Tanggal",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  Obx(
+                    () => InkWell(
+                      onTap: () async {
+                        final d = await showDatePicker(
+                          context: context,
+                          initialDate: date.value ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (d != null) date.value = d;
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded),
+                            const SizedBox(width: 12),
+                            Text(
+                              date.value == null
+                                  ? "Pilih Tanggal"
+                                  : DateFormat(
+                                      'dd MMM yyyy',
+                                    ).format(date.value!),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // ================= TIPE =================
+                  const Text(
+                    "Tipe",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  Obx(
+                    () => DropdownButtonFormField<String>(
+                      value: type.value,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.swap_vert_circle_rounded),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: "Pemasukan",
+                          child: Text("Pemasukan"),
+                        ),
+                        DropdownMenuItem(
+                          value: "Pengeluaran",
+                          child: Text("Pengeluaran"),
+                        ),
+                      ],
+                      onChanged: (v) => type.value = v!,
+                    ),
+                  ),
+
+                  const SizedBox(height: 36),
+
+                  // ================= BUTTON =================
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Get.back(),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: const Text("Batal"),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            // ===== VALIDASI (TIDAK DIUBAH) =====
+                            if (titleC.text.trim().isEmpty ||
+                                amountC.text.trim().isEmpty ||
+                                date.value == null) {
+                              Get.snackbar(
+                                "Gagal",
+                                "Semua field wajib diisi",
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            final data = Keuanganmodel(
+                              id: old?.id,
+                              title: titleC.text.trim(),
+                              amount: double.tryParse(amountC.text) ?? 0,
+                              type: type.value,
+                              date: date.value!,
+                            );
+
+                            Get.back();
+
+                            if (old == null) {
+                              await c.addKeuangan(data);
+                              Get.snackbar(
+                                "Berhasil",
+                                "Transaksi berhasil ditambahkan",
+                                snackPosition: SnackPosition.BOTTOM,
+                                backgroundColor: Colors.green.shade600,
+                                colorText: Colors.white,
+                                margin: const EdgeInsets.all(12),
+                              );
+                            } else {
+                              await c.updateKeuangan(data);
+                              Get.snackbar(
+                                "Berhasil",
+                                "Transaksi berhasil diperbarui",
+                                snackPosition: SnackPosition.BOTTOM,
+                                backgroundColor: Colors.blue.shade600,
+                                colorText: Colors.white,
+                                margin: const EdgeInsets.all(12),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: Text(
+                            old == null ? "SIMPAN" : "UPDATE",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
-      textConfirm: "Simpan",
-      onConfirm: () {
-        if (titleC.text.isEmpty || amountC.text.isEmpty || date.value == null) {
-          Get.snackbar("Error", "Isi semua data!");
-          return;
-        }
-
-        final data = Keuanganmodel(
-          id: old?.id,
-          title: titleC.text,
-          amount: double.tryParse(amountC.text) ?? 0,
-          type: type.value,
-          date: date.value!,
-        );
-
-        if (old == null) {
-          c.addKeuangan(data);
-        } else {
-          c.updateKeuangan(data);
-        }
-
-        Get.back();
-      },
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
   }
 
@@ -480,23 +915,100 @@ class KeuanganView extends StatelessWidget {
   // DETAIL DIALOG
   // ===================================================================
   void _showDetailDialog(Keuanganmodel k) {
-    Get.defaultDialog(
-      title: "Detail Transaksi",
-      content: Column(
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ================= ICON =================
+              Center(
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.receipt_long_rounded,
+                    size: 36,
+                    color: Colors.teal.shade700,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              // ================= TITLE =================
+              const Center(
+                child: Text(
+                  "Detail Transaksi",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              // ================= CONTENT =================
+              _detailRow("Judul", k.title),
+              _detailRow("Jumlah", "Rp ${k.amount.toStringAsFixed(0)}"),
+              _detailRow("Tipe", k.type),
+              _detailRow("Tanggal", DateFormat('dd MMM yyyy').format(k.date)),
+
+              const SizedBox(height: 26),
+
+              // ================= ACTION =================
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Get.back(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    "Tutup",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  /// helper kecil biar rapi
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Judul: ${k.title}",
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text("Jumlah: Rp ${k.amount.toStringAsFixed(0)}"),
-          const SizedBox(height: 8),
-          Text("Tipe: ${k.type}"),
-          const SizedBox(height: 8),
-          Text("Tanggal: ${DateFormat('dd MMM yyyy').format(k.date)}"),
+          SizedBox(
+            width: 80,
+            child: Text(
+              "$label:",
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: Text(value, style: TextStyle(color: Colors.grey.shade700)),
+          ),
         ],
       ),
-      textConfirm: "Tutup",
-      onConfirm: () => Get.back(),
     );
   }
 }

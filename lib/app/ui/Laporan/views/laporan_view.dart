@@ -177,8 +177,11 @@ class _LaporanViewState extends State<LaporanView> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.insert_drive_file_rounded,
-                            size: 90, color: Colors.indigo.shade200),
+                        Icon(
+                          Icons.insert_drive_file_rounded,
+                          size: 90,
+                          color: Colors.indigo.shade200,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           "Belum ada laporan",
@@ -234,7 +237,9 @@ class _LaporanViewState extends State<LaporanView> {
                           : null,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 14),
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -271,9 +276,11 @@ class _LaporanViewState extends State<LaporanView> {
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      Icon(Icons.event_rounded,
-                                          size: 16,
-                                          color: colorText.withOpacity(0.55)),
+                                      Icon(
+                                        Icons.event_rounded,
+                                        size: 16,
+                                        color: colorText.withOpacity(0.55),
+                                      ),
                                       const SizedBox(width: 6),
                                       Text(
                                         report.tanggal,
@@ -306,15 +313,18 @@ class _LaporanViewState extends State<LaporanView> {
                               const SizedBox(width: 10),
                               InkWell(
                                 borderRadius: BorderRadius.circular(12),
-                                onTap: () => c.hapusLaporan(index),
+                                onTap: () => _confirmDelete(context, index),
                                 child: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     color: Colors.red.withOpacity(0.10),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(Icons.delete_rounded,
-                                      color: Colors.redAccent, size: 20),
+                                  child: const Icon(
+                                    Icons.delete_rounded,
+                                    color: Colors.redAccent,
+                                    size: 20,
+                                  ),
                                 ),
                               ),
                             ],
@@ -403,114 +413,326 @@ class _LaporanViewState extends State<LaporanView> {
       }
     }
 
+    Get.bottomSheet(
+      DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.55,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Get.theme.cardColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
+            ),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ================= DRAG HANDLE =================
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+
+                  // ================= HEADER =================
+                  Row(
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.description_outlined,
+                          color: Colors.teal,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Tambah Laporan",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "Lengkapi judul, tanggal, dan deskripsi",
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ================= JUDUL =================
+                  const Text(
+                    "Judul Laporan",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: judulCtrl,
+                    decoration: _decoration(
+                      label: "Judul Laporan",
+                      hint: "Contoh: Laporan Rapat Bulanan",
+                      icon: Icons.title_rounded,
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // ================= TANGGAL =================
+                  const Text(
+                    "Tanggal",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: tanggalCtrl,
+                    readOnly: true,
+                    decoration: _decoration(
+                      label: "Tanggal",
+                      hint: "Pilih tanggal laporan",
+                      icon: Icons.event_rounded,
+                      suffix: const Icon(Icons.calendar_today_rounded),
+                    ),
+                    onTap: pilihTanggal,
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // ================= DESKRIPSI =================
+                  const Text(
+                    "Deskripsi",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: deskripsiCtrl,
+                    maxLines: 5,
+                    decoration: _decoration(
+                      label: "Deskripsi",
+                      hint: "Tulis ringkasan kegiatan / hasil laporan...",
+                      icon: Icons.notes_rounded,
+                    ),
+                  ),
+
+                  const SizedBox(height: 36),
+
+                  // ================= BUTTON =================
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          onPressed: () => Get.back(),
+                          child: const Text("Batal"),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          onPressed: () {
+                            final judul = judulCtrl.text.trim();
+                            final desc = deskripsiCtrl.text.trim();
+
+                            if (judul.isEmpty) {
+                              Get.snackbar(
+                                "Gagal",
+                                "Judul tidak boleh kosong",
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                              return;
+                            }
+
+                            c.tambahLaporan(judul, tanggalCtrl.text, desc);
+
+                            Get.back();
+
+                            Get.snackbar(
+                              "Berhasil",
+                              "Laporan berhasil ditambahkan",
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          },
+                          child: const Text(
+                            "SIMPAN DATA",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  void _confirmDelete(BuildContext context, int index) {
     Get.dialog(
       Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Tambah Laporan",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ================= ICON =================
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  "Lengkapi judul, tanggal, dan deskripsi agar laporan lebih jelas.",
-                  style: TextStyle(
-                      fontSize: 13, color: Colors.grey.withOpacity(0.9)),
+                child: Icon(
+                  Icons.delete_forever_rounded,
+                  size: 36,
+                  color: Colors.red.shade700,
                 ),
-                const SizedBox(height: 14),
+              ),
 
-                TextField(
-                  controller: judulCtrl,
-                  textInputAction: TextInputAction.next,
-                  decoration: _decoration(
-                    label: "Judul Laporan",
-                    hint: "Contoh: Laporan Rapat Bulanan",
-                    icon: Icons.title_rounded,
-                  ),
+              const SizedBox(height: 18),
+
+              // ================= TITLE =================
+              const Text(
+                "Hapus Laporan",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 10),
+
+              // ================= CONTENT =================
+              Text(
+                "Laporan yang dihapus tidak dapat dikembalikan.\n"
+                "Apakah kamu yakin ingin menghapus laporan ini?",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  height: 1.4,
+                  color: Colors.grey.shade700,
                 ),
-                const SizedBox(height: 12),
+              ),
 
-                TextField(
-                  controller: tanggalCtrl,
-                  readOnly: true,
-                  decoration: _decoration(
-                    label: "Tanggal",
-                    hint: "Pilih tanggal laporan",
-                    icon: Icons.event_rounded,
-                    suffix: const Icon(Icons.calendar_today_rounded),
-                  ),
-                  onTap: () => pilihTanggal(),
-                ),
-                const SizedBox(height: 12),
+              const SizedBox(height: 26),
 
-                TextField(
-                  controller: deskripsiCtrl,
-                  maxLines: 5,
-                  decoration: _decoration(
-                    label: "Deskripsi",
-                    hint: "Tulis ringkasan kegiatan / hasil laporan...",
-                    icon: Icons.notes_rounded,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: () => Get.back(),
-                        child: const Text("Batal"),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: () {
-                          final judul = judulCtrl.text.trim();
-                          final desc = deskripsiCtrl.text.trim();
-
-                          if (judul.isEmpty) {
-                            Get.snackbar("Gagal", "Judul tidak boleh kosong",
-                                snackPosition: SnackPosition.BOTTOM);
-                            return;
-                          }
-
-                          c.tambahLaporan(judul, tanggalCtrl.text, desc);
-                          Get.back();
-                        },
-                        child: const Text(
-                          "Simpan",
-                          style: TextStyle(fontWeight: FontWeight.w800),
+              // ================= ACTION BUTTONS =================
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(color: Colors.grey.shade400),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
+                      child: const Text(
+                        "Batal",
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // ================= TUTUP DIALOG DULU =================
+                        Get.back();
+
+                        // ================= HAPUS DATA =================
+                        c.hapusLaporan(index);
+
+                        // ================= NOTIFIKASI BERHASIL =================
+                        Get.snackbar(
+                          "Berhasil",
+                          "Laporan berhasil dihapus",
+                          snackPosition: SnackPosition.TOP,
+                          backgroundColor: Colors.green.shade600,
+                          colorText: Colors.white,
+                          margin: const EdgeInsets.all(16),
+                          borderRadius: 16,
+                          icon: const Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                          ),
+                          duration: const Duration(seconds: 2),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        "Hapus",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
+      barrierDismissible: false, // ⛔ tidak bisa ditutup klik luar
     );
   }
 
@@ -551,6 +773,7 @@ class _LaporanViewState extends State<LaporanView> {
                 ),
                 const SizedBox(height: 14),
 
+                // ================= JUDUL =================
                 TextField(
                   controller: judulCtrl,
                   textInputAction: TextInputAction.next,
@@ -561,6 +784,7 @@ class _LaporanViewState extends State<LaporanView> {
                 ),
                 const SizedBox(height: 12),
 
+                // ================= TANGGAL =================
                 TextField(
                   controller: tanggalCtrl,
                   readOnly: true,
@@ -573,6 +797,7 @@ class _LaporanViewState extends State<LaporanView> {
                 ),
                 const SizedBox(height: 12),
 
+                // ================= DESKRIPSI =================
                 TextField(
                   controller: deskripsiCtrl,
                   maxLines: 5,
@@ -581,9 +806,9 @@ class _LaporanViewState extends State<LaporanView> {
                     icon: Icons.notes_rounded,
                   ),
                 ),
-
                 const SizedBox(height: 16),
 
+                // ================= BUTTON =================
                 Row(
                   children: [
                     Expanded(
@@ -611,14 +836,45 @@ class _LaporanViewState extends State<LaporanView> {
                           final judul = judulCtrl.text.trim();
                           final desc = deskripsiCtrl.text.trim();
 
+                          // ❌ VALIDASI
                           if (judul.isEmpty) {
-                            Get.snackbar("Gagal", "Judul tidak boleh kosong",
-                                snackPosition: SnackPosition.BOTTOM);
+                            Get.snackbar(
+                              "Gagal",
+                              "Judul tidak boleh kosong",
+                              snackPosition: SnackPosition.BOTTOM,
+                              backgroundColor: Colors.redAccent.withOpacity(
+                                0.9,
+                              ),
+                              colorText: Colors.white,
+                              margin: const EdgeInsets.all(16),
+                              borderRadius: 14,
+                              icon: const Icon(
+                                Icons.error_rounded,
+                                color: Colors.white,
+                              ),
+                            );
                             return;
                           }
 
+                          // ✅ UPDATE
                           c.editLaporan(index, judul, tanggalCtrl.text, desc);
                           Get.back();
+
+                          // ✅ NOTIFIKASI BERHASIL
+                          Get.snackbar(
+                            "Berhasil",
+                            "Laporan berhasil diperbarui",
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: Colors.blueAccent.withOpacity(0.9),
+                            colorText: Colors.white,
+                            margin: const EdgeInsets.all(16),
+                            borderRadius: 14,
+                            icon: const Icon(
+                              Icons.update_rounded,
+                              color: Colors.white,
+                            ),
+                            duration: const Duration(seconds: 2),
+                          );
                         },
                         child: const Text(
                           "Update",
