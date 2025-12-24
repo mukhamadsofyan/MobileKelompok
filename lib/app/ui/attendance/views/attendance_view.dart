@@ -18,22 +18,29 @@ class _AttendanceViewState extends State<AttendanceView> {
   final ScrollController _scroll = ScrollController();
   double _offset = 0;
 
+  late final AttendanceController c;
+  late final AuthController authC;
+
   @override
   void initState() {
     super.initState();
+    c = Get.find<AttendanceController>();
+    authC = Get.find<AuthController>();
+
     _scroll.addListener(() {
       setState(() => _offset = _scroll.offset);
     });
   }
+
+  bool get isAdmin => authC.isAdmin;
+  bool get isExpired => widget.agenda.date.isBefore(DateTime.now());
 
   Color _blend(Color a, Color b) {
     final t = (_offset / 200).clamp(0.0, 1.0);
     return Color.lerp(a, b, t)!;
   }
 
-  double _headerHeight() {
-    return (220 - _offset / 2).clamp(120, 220).toDouble();
-  }
+  double _headerHeight() => (220 - _offset / 2).clamp(120, 220).toDouble();
 
   BorderRadius _headerRadius() {
     final r = (40 - _offset / 6).clamp(0, 40).toDouble();
@@ -42,18 +49,19 @@ class _AttendanceViewState extends State<AttendanceView> {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.put(AttendanceController(agenda: widget.agenda));
     final cs = Theme.of(context).colorScheme;
-    final isAdmin =
-        Get.find<AuthController>().userRole.value.toLowerCase() == "admin";
 
     return Scaffold(
       backgroundColor: cs.background,
 
-      /// ================= FAB =================
+      // ================= FAB (ADMIN & TIDAK EXPIRED) =================
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Obx(() {
-        if (c.isLocked.value) return const SizedBox();
+        // ❗ expired = READ ONLY (admin pun tidak boleh edit)
+        if (!isAdmin || c.isLocked.value || isExpired) {
+          return const SizedBox();
+        }
+
         return SizedBox(
           width: MediaQuery.of(context).size.width - 32,
           child: FilledButton.icon(
@@ -73,10 +81,9 @@ class _AttendanceViewState extends State<AttendanceView> {
         );
       }),
 
-      /// ================= BODY =================
       body: Stack(
         children: [
-          /// ================= HEADER =================
+          // ================= HEADER =================
           AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             height: _headerHeight(),
@@ -93,7 +100,7 @@ class _AttendanceViewState extends State<AttendanceView> {
             ),
           ),
 
-          /// ================= CONTENT =================
+          // ================= CONTENT =================
           SafeArea(
             child: SingleChildScrollView(
               controller: _scroll,
@@ -101,14 +108,12 @@ class _AttendanceViewState extends State<AttendanceView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// BACK + TITLE
+                  // BACK + TITLE
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: Colors.white,
-                        ),
+                        icon: const Icon(Icons.arrow_back_rounded,
+                            color: Colors.white),
                         onPressed: Get.back,
                       ),
                       const SizedBox(width: 8),
@@ -124,30 +129,22 @@ class _AttendanceViewState extends State<AttendanceView> {
                   ),
 
                   const SizedBox(height: 20),
-
-                  /// ================= AGENDA CARD =================
                   _agendaCard(cs),
 
                   const SizedBox(height: 20),
-
-                  /// ================= STATUS =================
-                  Obx(() => _statusBanner(cs, c.isLocked.value, isAdmin)),
+                  _statusBanner(cs),
 
                   const SizedBox(height: 20),
-
-                  /// ================= STATS =================
-                  Obx(() => _stats(cs, c)),
+                  _stats(cs),
 
                   const SizedBox(height: 24),
-
                   const Text(
                     "Daftar Anggota",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 12),
 
-                  /// ================= LIST =================
+                  // ================= LIST =================
                   Obx(() {
                     if (c.loading.value) {
                       return const Center(
@@ -160,14 +157,16 @@ class _AttendanceViewState extends State<AttendanceView> {
 
                     return Column(
                       children: c.strukturalList.map((s) {
-                        final hadir = c.attendanceMap[s.id] ?? false;
+                        final id = s.id;
+                        final hadir = id != null
+                            ? c.attendanceMap[id] ?? false
+                            : false;
+
                         return _memberTile(
                           cs: cs,
                           name: s.name,
                           role: s.role,
                           hadir: hadir,
-                          locked: c.isLocked.value,
-                          onTap: () => c.toggleAttendance(s.id),
                         );
                       }).toList(),
                     );
@@ -181,7 +180,7 @@ class _AttendanceViewState extends State<AttendanceView> {
     );
   }
 
-  /// =============================================================
+  // ================= AGENDA CARD =================
   Widget _agendaCard(ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -209,9 +208,8 @@ class _AttendanceViewState extends State<AttendanceView> {
               const Icon(Icons.event, size: 18),
               const SizedBox(width: 6),
               Text(
-                DateFormat(
-                  'EEEE, dd MMM yyyy • HH:mm',
-                ).format(widget.agenda.date),
+                DateFormat('EEEE, dd MMM yyyy • HH:mm')
+                    .format(widget.agenda.date),
               ),
             ],
           ),
@@ -220,55 +218,58 @@ class _AttendanceViewState extends State<AttendanceView> {
     );
   }
 
-  Widget _statusBanner(ColorScheme cs, bool locked, bool isAdmin) {
+  // ================= STATUS BANNER =================
+  Widget _statusBanner(ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: locked ? cs.errorContainer : cs.secondaryContainer,
+        color: isExpired ? cs.errorContainer : cs.secondaryContainer,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
           Icon(
-            locked ? Icons.lock : Icons.edit,
-            color: locked ? cs.onErrorContainer : cs.onSecondaryContainer,
+            isExpired ? Icons.event_busy : Icons.visibility,
+            color: isExpired
+                ? cs.onErrorContainer
+                : cs.onSecondaryContainer,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              locked
-                  ? "Absensi sudah dikunci"
-                  : "Tap nama untuk mengubah status",
+              isExpired
+                  ? "Agenda telah terlampaui. Absensi hanya dapat dilihat."
+                  : isAdmin
+                      ? "Admin dapat mengubah status kehadiran"
+                      : "Anda hanya dapat melihat absensi",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: locked ? cs.onErrorContainer : cs.onSecondaryContainer,
+                color: isExpired
+                    ? cs.onErrorContainer
+                    : cs.onSecondaryContainer,
               ),
             ),
           ),
-          if (locked && isAdmin)
-            TextButton(
-              onPressed: Get.find<AttendanceController>().unlockAttendance,
-              child: const Text("Buka"),
-            ),
         ],
       ),
     );
   }
 
-  Widget _stats(ColorScheme cs, AttendanceController c) {
+  // ================= STATS =================
+  Widget _stats(ColorScheme cs) {
     final total = c.strukturalList.length;
-    final hadir = c.attendanceMap.values.where((e) => e).length;
+    final hadir = c.attendanceMap.values.where((e) => e == true).length;
 
     return Row(
       children: [
-        _statItem("Hadir", hadir, Colors.green),
-        _statItem("Tidak", total - hadir, Colors.red),
-        _statItem("Total", total, Colors.teal),
+        _stat("Hadir", hadir, Colors.green),
+        _stat("Tidak", total - hadir, Colors.red),
+        _stat("Total", total, Colors.teal),
       ],
     );
   }
 
-  Widget _statItem(String label, int value, Color color) {
+  Widget _stat(String label, int value, Color color) {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -281,7 +282,7 @@ class _AttendanceViewState extends State<AttendanceView> {
           children: [
             Text(
               value.toString(),
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             Text(label),
           ],
@@ -290,13 +291,12 @@ class _AttendanceViewState extends State<AttendanceView> {
     );
   }
 
+  // ================= MEMBER TILE (READ ONLY) =================
   Widget _memberTile({
     required ColorScheme cs,
     required String name,
     required String role,
     required bool hadir,
-    required bool locked,
-    required VoidCallback onTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -308,16 +308,15 @@ class _AttendanceViewState extends State<AttendanceView> {
         ],
       ),
       child: ListTile(
-        onTap: locked ? null : onTap,
         leading: CircleAvatar(
           backgroundColor: cs.primaryContainer,
-          child: Text(name[0]),
+          child: Text(name.isNotEmpty ? name[0] : "?"),
         ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(role),
-        trailing: Switch(
-          value: hadir,
-          onChanged: locked ? null : (_) => onTap(),
+        trailing: Icon(
+          hadir ? Icons.check_circle : Icons.cancel,
+          color: hadir ? Colors.green : Colors.red,
         ),
       ),
     );

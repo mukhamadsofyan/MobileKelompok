@@ -11,15 +11,22 @@ class LaporanController extends GetxController {
     super.onInit();
 
     _box = Hive.box<Report>('reportsBox');
-
     reports.assignAll(_box.values);
   }
 
   // ===============================
   //        TAMBAH LAPORAN
   // ===============================
-  void tambahLaporan(String judul, String tanggal) {
-    final newReport = Report(judul: judul, tanggal: tanggal);
+  void tambahLaporan(
+    String judul,
+    String tanggal,
+    String deskripsi,
+  ) {
+    final newReport = Report(
+      judul: judul,
+      tanggal: tanggal,
+      deskripsi: deskripsi,
+    );
 
     _box.add(newReport);
     reports.assignAll(_box.values);
@@ -28,11 +35,21 @@ class LaporanController extends GetxController {
   // ===============================
   //         EDIT LAPORAN
   // ===============================
-  void editLaporan(int index, String judul, String tanggal) {
+  void editLaporan(
+    int index,
+    String judul,
+    String tanggal,
+    String deskripsi,
+  ) {
     final key = _box.keyAt(index);
-    final updated = Report(judul: judul, tanggal: tanggal);
 
-    _box.put(key, updated); // update Hive
+    final updated = Report(
+      judul: judul,
+      tanggal: tanggal,
+      deskripsi: deskripsi,
+    );
+
+    _box.put(key, updated);
     reports.assignAll(_box.values);
   }
 
@@ -42,7 +59,6 @@ class LaporanController extends GetxController {
   void hapusLaporan(int index) {
     final key = _box.keyAt(index);
     _box.delete(key);
-
     reports.assignAll(_box.values);
   }
 }

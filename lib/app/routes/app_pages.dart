@@ -4,6 +4,7 @@ import 'package:orgtrack/app/middleware/auth_middleware.dart';
 import 'package:orgtrack/app/ui/about/view/about_app_view.dart';
 import 'package:orgtrack/app/ui/agenda/bindings/agenda_binding.dart';
 import 'package:orgtrack/app/ui/agenda/views/agenda_view.dart';
+import 'package:orgtrack/app/ui/attendance/bindings/attendance_binding.dart';
 import 'package:orgtrack/app/ui/attendance/bindings/binding_agenda.dart';
 import 'package:orgtrack/app/ui/attendance/views/AttendanceAgendaView.dart';
 import 'package:orgtrack/app/ui/attendance/views/attendance_view.dart';
@@ -60,6 +61,7 @@ class AppPages {
         }
         return AttendanceView(agenda: agenda);
       },
+      binding: AttendanceBinding(), // ✅ INI YANG BENAR
     ),
     GetPage(
       name: Routes.LOKASI_SEKRETARIAT,

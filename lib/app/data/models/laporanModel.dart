@@ -3,11 +3,13 @@ import 'package:hive/hive.dart';
 // Penting: pastikan typeId unik di project kamu
 class Report {
   final String judul;
-  final String tanggal;
+  final String tanggal; // yyyy-MM-dd
+  final String deskripsi;
 
   Report({
     required this.judul,
     required this.tanggal,
+    required this.deskripsi,
   });
 }
 
@@ -26,16 +28,20 @@ class ReportAdapter extends TypeAdapter<Report> {
     return Report(
       judul: fields[0] as String,
       tanggal: fields[1] as String,
+      // ⬇️ AMAN UNTUK DATA LAMA
+      deskripsi: fields.containsKey(2) ? fields[2] as String : "",
     );
   }
 
   @override
   void write(BinaryWriter writer, Report obj) {
     writer
-      ..writeByte(2) // jumlah field
+      ..writeByte(3) // JUMLAH FIELD BARU
       ..writeByte(0)
       ..write(obj.judul)
       ..writeByte(1)
-      ..write(obj.tanggal);
+      ..write(obj.tanggal)
+      ..writeByte(2)
+      ..write(obj.deskripsi);
   }
 }

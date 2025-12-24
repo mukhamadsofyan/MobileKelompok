@@ -90,6 +90,16 @@ Future<void> main() async {
 class OrgTrackApp extends StatelessWidget {
   const OrgTrackApp({super.key});
 
+  String _getInitialRoute() {
+    final auth = Get.find<AuthController>();
+
+    if (auth.isLoggedIn) {
+      return Routes.HOME; // GANTI sesuai route utama kamu
+    } else {
+      return Routes.WELCOME;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeC = Get.find<ThemeController>();
@@ -98,7 +108,7 @@ class OrgTrackApp extends StatelessWidget {
       () => GetMaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'OrgTrack',
-        initialRoute: Routes.WELCOME,
+        initialRoute: _getInitialRoute(), // ✅ SEKARANG VALID
         getPages: AppPages.routes,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,

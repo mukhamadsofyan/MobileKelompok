@@ -520,7 +520,10 @@ class _AgendaViewState extends State<AgendaView> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).cardColor,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF121212)
+          : const Color(0xFFF7F9F8),
+
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -589,16 +592,22 @@ class _AgendaViewState extends State<AgendaView> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 16,
+                      vertical: 16,
+                      horizontal: 18,
                     ),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF1E1E1E)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: Colors.teal.shade200,
+                        color: selected.value == null
+                            ? Colors.grey.shade300
+                            : Colors.teal.shade400,
                         width: 1.5,
                       ),
                     ),
+
                     child: Row(
                       children: [
                         Icon(Icons.calendar_today, color: Colors.teal.shade700),
@@ -684,22 +693,32 @@ class _AgendaViewState extends State<AgendaView> {
   }
 
   InputDecoration _input(String label, {IconData? icon}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InputDecoration(
       labelText: label,
       prefixIcon: icon != null ? Icon(icon) : null,
-      floatingLabelBehavior: FloatingLabelBehavior.auto,
+
       filled: true,
-      fillColor: Colors.grey.shade50,
+      fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+
+      labelStyle: TextStyle(
+        fontWeight: FontWeight.w600,
+        color: isDark ? Colors.white70 : Colors.grey.shade700,
+      ),
+
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
       ),
+
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: Colors.grey.shade300, width: 1.3),
       ),
+
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide(color: Colors.teal.shade700, width: 2),
       ),
     );

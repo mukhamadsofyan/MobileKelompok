@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:orgtrack/app/data/db/db_helper.dart';
+
 import '../../../data/models/AgendaModel.dart';
 import '../../../data/models/StrukturalModel.dart';
+import '../../../controllers/auth_controller.dart';
 
 class AttendanceController extends GetxController {
   final SupabaseDB db = SupabaseDB();
@@ -10,21 +12,23 @@ class AttendanceController extends GetxController {
 
   AttendanceController({required this.agenda});
 
-  var strukturalList = <Struktural>[].obs;
-  var attendanceMap = <int, bool>{}.obs;
-  var loading = true.obs;
-  var isLocked = false.obs;
+  final strukturalList = <Struktural>[].obs;
+  final attendanceMap = <int, bool>{}.obs;
+  final loading = true.obs;
+  final isLocked = false.obs;
+
+  bool get isAdmin =>
+      Get.find<AuthController>().userRole.value.toLowerCase().trim() == "admin";
 
   @override
   void onInit() {
     super.onInit();
 
-    // 🔐 GUARD WAJIB (FIX CRASH)
     if (agenda.id == null) {
-      Get.back();
+      // jangan bikin user "gabisa buka" tanpa alasan jelas
       Get.snackbar(
         "Error",
-        "Agenda tidak memiliki ID",
+        "Agenda tidak valid",
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
       );
@@ -34,70 +38,58 @@ class AttendanceController extends GetxController {
     loadAttendanceData();
   }
 
-  /// 🔄 Load data absensi
   Future<void> loadAttendanceData() async {
     if (agenda.id == null) return;
 
     loading.value = true;
 
-    // Ambil struktural
     final list = await db.getStruktural();
     strukturalList.assignAll(list);
 
-    // Ambil absensi
     final rows = await db.getAttendanceByAgenda(agenda.id!);
 
     final map = <int, bool>{};
-    for (var row in rows) {
+    for (final row in rows) {
       final sid = row['struktural_id'];
       if (sid != null) {
-        map[sid as int] =
-            (row['present'] == 1 || row['present'] == true);
+        map[sid as int] = (row['present'] == true || row['present'] == 1);
       }
     }
 
     attendanceMap.assignAll(map);
 
-    // Default false
-    for (var s in strukturalList) {
+    for (final s in strukturalList) {
       if (s.id != null) {
         attendanceMap.putIfAbsent(s.id!, () => false);
       }
     }
 
-    // Auto lock jika lewat tanggal
+    // auto lock kalau agenda sudah lewat
     isLocked.value = agenda.date.isBefore(DateTime.now());
 
     loading.value = false;
   }
 
-  /// 🔁 Refresh
-  Future<void> refreshData() async {
-    await loadAttendanceData();
-  }
-
-  /// 👆 Toggle hadir
   Future<void> toggleAttendance(int? strukturalId) async {
+    // 🔒 USER READ ONLY (fix utama)
+    if (!isAdmin) return;
+
     if (isLocked.value) return;
     if (strukturalId == null || agenda.id == null) return;
 
     final current = attendanceMap[strukturalId] ?? false;
     attendanceMap[strukturalId] = !current;
 
-    await db.markAttendance(
-      agenda.id!,
-      strukturalId,
-      !current,
-    );
+    await db.markAttendance(agenda.id!, strukturalId, !current);
   }
 
-  /// 🔐 Kunci absensi
   void lockAttendance() {
-    isLocked.value = true;
+    if (!isAdmin) return;
 
+    isLocked.value = true;
     Get.snackbar(
-      'Absensi Dikunci',
-      'Data kehadiran telah dikunci.',
+      "Absensi Dikunci",
+      "Data absensi telah dikunci",
       backgroundColor: Colors.teal.shade700,
       colorText: Colors.white,
       icon: const Icon(Icons.lock, color: Colors.white),
@@ -106,14 +98,15 @@ class AttendanceController extends GetxController {
     );
   }
 
-  /// 🔓 Admin buka kunci
   Future<void> unlockAttendance() async {
+    if (!isAdmin) return;
+
     isLocked.value = false;
-    await refreshData();
+    await loadAttendanceData();
 
     Get.snackbar(
-      'Kunci Dibuka',
-      'Absensi bisa diedit kembali.',
+      "Kunci Dibuka",
+      "Absensi bisa diedit kembali",
       backgroundColor: Colors.green.shade600,
       colorText: Colors.white,
       icon: const Icon(Icons.lock_open, color: Colors.white),
