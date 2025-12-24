@@ -83,7 +83,7 @@ class _WelcomeViewState extends State<WelcomeView>
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Center(
                   child: Image.asset(
-                    "assets/images/arunika.jpg",
+                    "assets/images/arunobg.png",
                     height: 230,
                   ),
                 ),

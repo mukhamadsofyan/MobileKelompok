@@ -10,7 +10,8 @@ class LoginView extends StatefulWidget {
   State<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
+class _LoginViewState extends State<LoginView>
+    with TickerProviderStateMixin {
   final emailC = TextEditingController();
   final passC = TextEditingController();
 
@@ -22,7 +23,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
   late Animation<double> shake;
 
   bool isError = false;
-  bool isPasswordVisible = false; // 👁️ state untuk show/hide password
+  bool isPasswordVisible = false;
 
   @override
   void initState() {
@@ -103,7 +104,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                 opacity: fadeHeader,
                 child: Center(
                   child: Image.asset(
-                    "assets/images/arunika.jpg",
+                    "assets/images/arunobg.png",
                     height: 200,
                   ),
                 ),
@@ -123,9 +124,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                   position: slideCard,
                   child: Container(
                     width: double.infinity,
-                    constraints: BoxConstraints(
-                      minHeight: height - 290,
-                    ),
+                    constraints: BoxConstraints(minHeight: height - 290),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
                       vertical: 30,
@@ -153,20 +152,20 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                         Row(
                           children: [
                             Text(
-                              "Don't Have An Account?",
+                              "Don't have an account?",
                               style: GoogleFonts.inter(
-                                color: Colors.black87,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
                             ),
                             TextButton(
-                              onPressed: () => Get.toNamed('/register'),
+                              onPressed: () =>
+                                  Get.toNamed('/register'),
                               child: Text(
                                 "Sign Up",
                                 style: GoogleFonts.inter(
                                   color: const Color(0xFF00A6AF),
-                                  fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -174,7 +173,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                           ],
                         ),
 
-                        const SizedBox(height: 25),
+                        const SizedBox(height: 28),
 
                         // EMAIL
                         _inputField(
@@ -186,7 +185,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
 
                         const SizedBox(height: 18),
 
-                        // PASSWORD (dengan toggle)
+                        // PASSWORD
                         _inputField(
                           controller: passC,
                           hint: "Password",
@@ -196,79 +195,81 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                           isPassword: true,
                           togglePassword: () {
                             setState(() {
-                              isPasswordVisible = !isPasswordVisible;
+                              isPasswordVisible =
+                                  !isPasswordVisible;
                             });
                           },
                         ),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 28),
 
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              "Forgot Password?",
-                              style: GoogleFonts.inter(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-
+                        // LOGIN BUTTON
                         Obx(() {
                           return SizedBox(
                             width: double.infinity,
                             height: 55,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00B8C0),
+                                backgroundColor:
+                                    const Color(0xFF00B8C0),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
+                                  borderRadius:
+                                      BorderRadius.circular(30),
                                 ),
                               ),
                               onPressed: auth.isLoading.value
                                   ? null
                                   : () async {
-                                      final email = emailC.text.trim();
-                                      final pass = passC.text.trim();
+                                      final email =
+                                          emailC.text.trim();
+                                      final pass =
+                                          passC.text.trim();
 
-                                      String? validationMsg;
+                                      String? msg;
 
-                                      if (email.isEmpty || pass.isEmpty) {
-                                        validationMsg = "Email dan password tidak boleh kosong.";
-                                      } else if (!GetUtils.isEmail(email)) {
-                                        validationMsg = "Format email tidak valid.";
-                                      } else if (pass.length < 6) {
-                                        validationMsg = "Password minimal 6 karakter.";
+                                      if (email.isEmpty ||
+                                          pass.isEmpty) {
+                                        msg =
+                                            "Email dan password tidak boleh kosong.";
+                                      } else if (!GetUtils
+                                          .isEmail(email)) {
+                                        msg =
+                                            "Format email tidak valid.";
+                                      } else if (pass.length <
+                                          6) {
+                                        msg =
+                                            "Password minimal 6 karakter.";
                                       }
 
-                                      if (validationMsg != null) {
+                                      if (msg != null) {
                                         Get.snackbar(
                                           "Validasi gagal",
-                                          validationMsg,
-                                          snackPosition: SnackPosition.TOP,
+                                          msg,
+                                          snackPosition:
+                                              SnackPosition.TOP,
                                         );
                                         triggerError();
                                         return;
                                       }
 
-                                      final success = await auth.login(email, pass);
+                                      final success =
+                                          await auth.login(
+                                              email, pass);
 
                                       if (!success) {
                                         triggerError();
                                       }
                                     },
                               child: auth.isLoading.value
-                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
                                   : const Text(
                                       "LOGIN",
                                       style: TextStyle(
                                         fontSize: 18,
-                                        fontWeight: FontWeight.w800,
+                                        fontWeight:
+                                            FontWeight.w800,
                                         color: Colors.white,
                                       ),
                                     ),
@@ -276,28 +277,30 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                           );
                         }),
 
-                        const SizedBox(height: 30),
+                        // ====== TEKS PENUTUP (ANTI KOSONG) ======
+                        const SizedBox(height: 26),
 
                         Center(
-                          child: Text(
-                            "Or Continue With",
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Column(
+                            children: [
+                              Text(
+                                "Selamat datang kembali 👋",
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Masuk untuk melanjutkan ke aplikasi",
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _social("Apple", Icons.apple),
-                            const SizedBox(width: 15),
-                            _social("Google", Icons.g_mobiledata),
-                          ],
                         ),
 
                         const SizedBox(height: 40),
@@ -313,7 +316,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
     );
   }
 
-  // INPUT FIELD
+  // ================= INPUT FIELD =================
   Widget _inputField({
     required TextEditingController controller,
     required String hint,
@@ -327,10 +330,14 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 300),
       height: 50,
       decoration: BoxDecoration(
-        color: error ? Colors.red.shade50 : const Color(0xFFF0F3F6),
+        color: error
+            ? Colors.red.shade50
+            : const Color(0xFFF0F3F6),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: error ? Colors.red.shade300 : Colors.black26,
+          color: error
+              ? Colors.red.shade300
+              : Colors.black26,
           width: error ? 1.8 : 1.2,
         ),
       ),
@@ -339,7 +346,8 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
           const SizedBox(width: 12),
           Icon(
             icon,
-            color: error ? Colors.red.shade400 : Colors.black87,
+            color:
+                error ? Colors.red.shade400 : Colors.black87,
             size: 22,
           ),
           const SizedBox(width: 12),
@@ -360,9 +368,8 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                 ),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-
-                // 👁️ suffix icon show/hide password
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10),
                 suffixIcon: isPassword
                     ? IconButton(
                         icon: Icon(
@@ -375,33 +382,6 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                       )
                     : null,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // SOCIAL LOGIN BUTTON
-  Widget _social(String title, IconData icon) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.black26, width: 1.3),
-        color: Colors.white,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 28, color: Colors.black87),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
             ),
           ),
         ],

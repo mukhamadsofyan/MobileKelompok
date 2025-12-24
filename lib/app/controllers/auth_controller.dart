@@ -9,6 +9,7 @@ class AuthController extends GetxController {
   // ============================
   var isLoading = false.obs;
   var userRole = "member".obs;
+  var username = "".obs; // ✅ USERNAME STATE
 
   // ============================
   // GETTER
@@ -17,56 +18,73 @@ class AuthController extends GetxController {
   bool get isMember => userRole.value == "member";
   bool get isLoggedIn => supabase.auth.currentSession != null;
 
-  /// 🔑 PENTING
-  /// Dipakai untuk membatasi absensi:
-  /// user hanya bisa absensi dirinya sendiri
+  /// Dipakai untuk pembatasan absensi
   String get userId => supabase.auth.currentUser?.id ?? "";
 
+  String get currentUsername => username.value;
+
   // ============================
-  // INIT → SYNC ROLE FROM SESSION
+  // INIT → SYNC SESSION
   // ============================
   @override
   void onInit() {
     super.onInit();
-    _loadRoleFromSession();
+    _syncFromSession();
   }
 
-  void _loadRoleFromSession() {
+  void _syncFromSession() {
     final session = supabase.auth.currentSession;
-    final role = session?.user.userMetadata?['role'] ?? 'member';
-    userRole.value = role.toLowerCase().trim();
+    final metadata = session?.user.userMetadata ?? {};
+
+    userRole.value =
+        (metadata['role'] ?? 'member').toString().toLowerCase().trim();
+
+    username.value =
+        (metadata['username'] ?? '').toString().trim();
   }
 
   // ============================
-  // REGISTER
+  // REGISTER (USERNAME + EMAIL + PASSWORD)
   // ============================
-  Future<bool> register(String email, String password) async {
+  Future<bool> register(
+    String username,
+    String email,
+    String password,
+  ) async {
     try {
       isLoading.value = true;
 
       final cleanEmail = email.trim().toLowerCase();
+      final cleanUsername = username.trim();
+
+      if (cleanUsername.length < 3) {
+        throw "Username minimal 3 karakter";
+      }
 
       final res = await supabase.auth.signUp(
         email: cleanEmail,
         password: password.trim(),
         data: {
-          "role": "member", // default role
+          "role": "member",
+          "username": cleanUsername, // ✅ SIMPAN USERNAME
         },
       );
 
-      if (res.user == null) throw "Registrasi gagal";
+      if (res.user == null) {
+        throw "Registrasi gagal";
+      }
 
       Get.snackbar(
         "Sukses",
         "Registrasi berhasil. Silakan login.",
       );
-      Get.offAllNamed('/login');
 
+      Get.offAllNamed('/login');
       return true;
     } catch (e) {
       Get.snackbar(
         "Error",
-        e.toString(),
+        e.toString().replaceAll("Exception: ", ""),
       );
       return false;
     } finally {
@@ -86,22 +104,25 @@ class AuthController extends GetxController {
         password: password.trim(),
       );
 
-      final role =
-          res.session?.user.userMetadata?['role'] ?? 'member';
+      final metadata = res.session?.user.userMetadata ?? {};
 
-      userRole.value = role.toLowerCase().trim();
+      userRole.value =
+          (metadata['role'] ?? 'member').toString().toLowerCase().trim();
+
+      username.value =
+          (metadata['username'] ?? '').toString().trim();
 
       Get.snackbar(
         "Sukses",
         "Login sebagai ${userRole.value}",
       );
-      Get.offAllNamed('/home');
 
+      Get.offAllNamed('/home');
       return true;
     } catch (e) {
       Get.snackbar(
         "Login Gagal",
-        e.toString(),
+        e.toString().replaceAll("Exception: ", ""),
       );
       return false;
     } finally {
@@ -115,8 +136,8 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     await supabase.auth.signOut();
 
-    // reset state
     userRole.value = "member";
+    username.value = "";
     isLoading.value = false;
 
     Get.offAllNamed('/login');

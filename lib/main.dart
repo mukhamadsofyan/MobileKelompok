@@ -1,39 +1,43 @@
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:orgtrack/app/data/models/laporanModel.dart';
-import 'package:orgtrack/app/data/models/program_kerja.dart';
-import 'package:orgtrack/app/ui/programkerja/controllers/programkerja_controller.dart';
-import 'package:orgtrack/services/notification_service.dart';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'firebase_options.dart';
 
-// CONTROLLERS
+// ================= SERVICES =================
+import 'package:orgtrack/services/notification_service.dart';
+
+// ================= CONTROLLERS =================
 import 'app/controllers/auth_controller.dart';
-import 'app/ui/agenda/controllers/agenda_controller.dart';
 import 'app/controllers/theme_controller.dart';
+import 'app/ui/agenda/controllers/agenda_controller.dart';
 import 'app/ui/programkerja/controllers/programkerja_controller.dart';
 
-// DATA
+// ================= DATA =================
 import 'app/data/models/laporanModel.dart';
 
-// THEME
+// ================= THEME & ROUTES =================
 import 'app/theme/theme.dart';
-
-// ROUTES
 import 'app/routes/app_pages.dart';
 
+/// =======================================================
+/// BACKGROUND FCM HANDLER (WAJIB ADA & TOP LEVEL)
+/// =======================================================
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(
+Future<void> firebaseMessagingBackgroundHandler(
     RemoteMessage message) async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  print('[FCM][BACKGROUND] ${message.data}');
+
+  // Jangan tampilkan UI di sini
+  debugPrint('[FCM][BACKGROUND] ${message.data}');
 }
 
 Future<void> main() async {
@@ -44,11 +48,16 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // WAJIB sebelum runApp
   FirebaseMessaging.onBackgroundMessage(
-      _firebaseMessagingBackgroundHandler);
+    firebaseMessagingBackgroundHandler,
+  );
 
-  // ================= NOTIFICATION SERVICE =================
-  await Get.putAsync(() => NotificationService().init());
+  // ================= NOTIFICATION =================
+  await Get.putAsync<NotificationService>(
+    () async => await NotificationService().init(),
+    permanent: true,
+  );
 
   // ================= ENV =================
   await dotenv.load(fileName: ".env");
@@ -65,19 +74,19 @@ Future<void> main() async {
   );
 
   // ================= CONTROLLERS =================
-  Get.put(AgendaController(), permanent: true);
   Get.put(AuthController(), permanent: true);
   Get.put(ThemeController(), permanent: true);
+  Get.put(AgendaController(), permanent: true);
 
-  // ================================
-  //   WAJIB UNTUK PROGRAM KERJA
-  // ================================
+  // WAJIB UNTUK PROGRAM KERJA
   Get.put(ProgramControllerHttp(), permanent: true);
 
   runApp(const OrgTrackApp());
 }
 
-// ================= APP =================
+// =======================================================
+// APP ROOT
+// =======================================================
 class OrgTrackApp extends StatelessWidget {
   const OrgTrackApp({super.key});
 

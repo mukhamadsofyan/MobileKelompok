@@ -20,4 +20,9 @@ abstract class Routes {
   static const PROFILE = '/profile';
   static const LOKASI = '/lokasi';
   static const PENGUMUMAN = '/pengumuman';
+  static const ABOUT = '/about';
+  static const CONTACT = '/CONTACT';
+  static const LOKASI_SEKRETARIAT = '/LOKASI_SEKRETARIAT';
+  static const BENEFIT_HMIF = '/benefit-hmif';
+
 }

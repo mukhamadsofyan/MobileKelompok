@@ -32,14 +32,27 @@ class _LaporanViewState extends State<LaporanView> {
       // ============================================================
       body: Column(
         children: [
+          // ===================== HEADER (SAMA DENGAN AGENDA) =====================
           Container(
-            padding:
-                const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 18),
+            padding: const EdgeInsets.only(
+              top: 45,
+              left: 20,
+              right: 20,
+              bottom: 15,
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: themeC.isDark
-                    ? const [Color(0xFF00332E), Color(0xFF002A26)]
-                    : const [Color(0xFF3F51B5), Color(0xFF5C6BC0)],
+                    ? const [
+                        Color(0xFF00332E),
+                        Color(0xFF004D40),
+                        Color(0xFF003E39),
+                      ]
+                    : const [
+                        Color(0xFF009688),
+                        Color(0xFF4DB6AC),
+                        Color(0xFF80CBC4),
+                      ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -48,28 +61,40 @@ class _LaporanViewState extends State<LaporanView> {
                 bottomRight: Radius.circular(32),
               ),
             ),
-
             child: Column(
               children: [
-                // ROW HEADER
+                // ================= ROW HEADER =================
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // BACK
                     GestureDetector(
                       onTap: () => Get.back(),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white),
-                    ),
-
-                    const Text(
-                      "Laporan Organisasi",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.22),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
 
+                    // TITLE
+                    const Text(
+                      "Laporan Organisasi",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+
+                    // TOGGLE THEME
                     IconButton(
                       icon: Icon(
                         themeC.isDark ? Icons.dark_mode : Icons.light_mode,
@@ -82,17 +107,17 @@ class _LaporanViewState extends State<LaporanView> {
 
                 const SizedBox(height: 18),
 
-                // SEARCH BAR
+                // ================= SEARCH =================
                 Container(
                   decoration: BoxDecoration(
                     color: cardColor,
                     borderRadius: BorderRadius.circular(26),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withOpacity(0.12),
                         blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      )
+                        offset: const Offset(0, 2),
+                      ),
                     ],
                   ),
                   child: TextField(
@@ -100,19 +125,24 @@ class _LaporanViewState extends State<LaporanView> {
                     onChanged: (_) => setState(() {}),
                     style: TextStyle(color: colorText),
                     decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.search,
-                          color: colorText.withOpacity(0.6)),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: colorText.withOpacity(0.6),
+                      ),
                       hintText: "Cari laporan...",
                       hintStyle: TextStyle(color: colorText.withOpacity(0.5)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 14),
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
+
 
           const SizedBox(height: 10),
 

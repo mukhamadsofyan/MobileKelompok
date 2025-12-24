@@ -6,6 +6,7 @@ import '../../../controllers/theme_controller.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../data/models/AgendaModel.dart';
 import '../controllers/agenda_controller.dart';
+import '../../../routes/app_pages.dart';
 
 class AgendaView extends StatefulWidget {
   const AgendaView({super.key});
@@ -22,6 +23,9 @@ class _AgendaViewState extends State<AgendaView> {
   final searchCtrl = TextEditingController();
   final filter = "Semua".obs;
 
+  // ✅ footer model Home: 0 Beranda, 1 Agenda, 2 Notifikasi, 3 Profil
+  int _currentIndex = 1;
+
   @override
   Widget build(BuildContext context) {
     final colorBG = Theme.of(context).colorScheme.background;
@@ -30,7 +34,6 @@ class _AgendaViewState extends State<AgendaView> {
 
     return Scaffold(
       backgroundColor: colorBG,
-
       body: Column(
         children: [
           // ===================== HEADER =====================
@@ -62,7 +65,6 @@ class _AgendaViewState extends State<AgendaView> {
                 bottomRight: Radius.circular(32),
               ),
             ),
-
             child: Column(
               children: [
                 // ROW HEADER
@@ -99,7 +101,6 @@ class _AgendaViewState extends State<AgendaView> {
                     // TOGGLE + FILTER
                     Row(
                       children: [
-                        // TOGGLE TEMA
                         IconButton(
                           icon: Icon(
                             themeC.isDark ? Icons.dark_mode : Icons.light_mode,
@@ -107,7 +108,6 @@ class _AgendaViewState extends State<AgendaView> {
                           ),
                           onPressed: () => themeC.toggleTheme(),
                         ),
-
                         PopupMenuButton<String>(
                           icon: const Icon(
                             Icons.filter_alt_rounded,
@@ -250,7 +250,9 @@ class _AgendaViewState extends State<AgendaView> {
         ],
       ),
 
-      // FAB hanya ADMIN
+      // ✅ FOOTER: DISAMAKAN DENGAN HOME (tanpa notifications agar tidak error)
+      bottomNavigationBar: _modernFooter(context),
+
       floatingActionButton: auth.isAdmin
           ? FloatingActionButton.extended(
               backgroundColor: Colors.teal.shade700,
@@ -285,7 +287,6 @@ class _AgendaViewState extends State<AgendaView> {
           horizontal: 20,
           vertical: 14,
         ),
-
         leading: CircleAvatar(
           radius: 28,
           backgroundColor: expired
@@ -296,7 +297,6 @@ class _AgendaViewState extends State<AgendaView> {
             color: expired ? Colors.grey.shade700 : Colors.teal.shade700,
           ),
         ),
-
         title: Text(
           a.title,
           style: TextStyle(
@@ -305,7 +305,6 @@ class _AgendaViewState extends State<AgendaView> {
             color: colorText,
           ),
         ),
-
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -339,7 +338,6 @@ class _AgendaViewState extends State<AgendaView> {
             ),
           ],
         ),
-
         trailing: isAdmin
             ? PopupMenuButton<String>(
                 onSelected: (v) {
@@ -374,6 +372,97 @@ class _AgendaViewState extends State<AgendaView> {
     );
   }
 
+  // =========================================================
+  // ✅ FOOTER (COPY HOME STYLE)
+  // - Mode gelap: tetap warna sebelumnya (dark solid)
+  // - Tidak pakai controller.notifications (biar gak error)
+  // =========================================================
+  Widget _modernFooter(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        // 🌙 DARK MODE → WARNA LAMA
+        color: isDark ? const Color(0xFF1E1E1E) : null,
+
+        // 🌞 LIGHT MODE → GRADIENT SAMA KAYA HOME
+        gradient: isDark
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF009688),
+                  Color(0xFF4DB6AC),
+                  Color(0xFF80CBC4),
+                ],
+              ),
+
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _footerItem(Icons.home, "Beranda", 0),
+          _footerItem(Icons.event, "Agenda", 1),
+          _footerItem(Icons.notifications, "Notifikasi", 2),
+          _footerItem(Icons.person, "Profil", 3),
+        ],
+      ),
+    );
+  }
+
+  Widget _footerItem(IconData icon, String label, int index) {
+    final active = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        if (_currentIndex == index) return;
+
+        setState(() => _currentIndex = index);
+
+        switch (index) {
+          case 0:
+            Get.offAllNamed(Routes.HOME);
+            break;
+          case 1:
+            Get.offAllNamed(Routes.AGENDA_ORGANISASI);
+            break;
+          case 2:
+            Get.offAllNamed(Routes.NOTIFIKASI);
+            break;
+          case 3:
+            Get.offAllNamed(Routes.PROFILE);
+            break;
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 26, color: active ? Colors.white : Colors.white70),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: active ? FontWeight.bold : FontWeight.normal,
+              color: active ? Colors.white : Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ===================== BOTTOM SHEET ADD/EDIT ====================
   void _showAgendaSheet(BuildContext context, {AgendaOrganisasi? agenda}) {
     if (!auth.isAdmin) {
@@ -390,8 +479,6 @@ class _AgendaViewState extends State<AgendaView> {
 
     Future pick() async {
       final now = DateTime.now();
-
-      // 🔒 FIX: pastikan initialDate >= firstDate
       final initialDate = selected.value != null && selected.value!.isAfter(now)
           ? selected.value!
           : now;
@@ -399,20 +486,33 @@ class _AgendaViewState extends State<AgendaView> {
       final d = await showDatePicker(
         context: context,
         initialDate: initialDate,
-        firstDate: DateTime(2000), // ✅ boleh edit agenda lama
+        firstDate: DateTime(now.year, now.month, now.day),
         lastDate: DateTime(2100),
       );
 
       if (d != null) {
         final t = await showTimePicker(
           context: context,
-          initialTime: selected.value != null
-              ? TimeOfDay.fromDateTime(selected.value!)
-              : TimeOfDay.now(),
+          initialTime: TimeOfDay.fromDateTime(
+            selected.value != null && selected.value!.isAfter(now)
+                ? selected.value!
+                : now,
+          ),
         );
 
         if (t != null) {
-          selected.value = DateTime(d.year, d.month, d.day, t.hour, t.minute);
+          final picked = DateTime(d.year, d.month, d.day, t.hour, t.minute);
+
+          if (picked.isBefore(now)) {
+            Get.snackbar(
+              "Waktu tidak valid",
+              "Agenda harus dijadwalkan ke waktu mendatang",
+              backgroundColor: Colors.red.shade100,
+            );
+            return;
+          }
+
+          selected.value = picked;
         }
       }
     }
@@ -422,88 +522,133 @@ class _AgendaViewState extends State<AgendaView> {
       isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-
       builder: (_) => Padding(
         padding: EdgeInsets.only(
           left: 20,
           right: 20,
-          top: 24,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          top: 18,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         ),
-
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 45,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(10),
+              Center(
+                child: Container(
+                  width: 46,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              Text(
-                agenda == null ? "Tambah Agenda" : "Edit Agenda",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.teal.shade800,
-                ),
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Icon(
+                    agenda == null
+                        ? Icons.event_available
+                        : Icons.edit_calendar,
+                    color: Colors.teal.shade700,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    agenda == null ? "Tambah Agenda" : "Edit Agenda",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.teal.shade800,
+                    ),
+                  ),
+                ],
               ),
-
+              const SizedBox(height: 6),
+              Divider(color: Colors.teal.shade100),
               const SizedBox(height: 18),
-
-              TextField(controller: titleC, decoration: _input("Judul Agenda")),
-
-              const SizedBox(height: 14),
-
-              TextField(
+              TextFormField(
+                controller: titleC,
+                decoration: _input("Judul Agenda", icon: Icons.title_rounded),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
                 controller: descC,
                 maxLines: 3,
-                decoration: _input("Deskripsi"),
-              ),
-
-              const SizedBox(height: 14),
-
-              Obx(
-                () => TextButton.icon(
-                  icon: const Icon(Icons.calendar_today, color: Colors.teal),
-                  label: Text(
-                    selected.value == null
-                        ? "Pilih Tanggal"
-                        : DateFormat(
-                            'dd MMM yyyy – HH:mm',
-                          ).format(selected.value!),
-                    style: TextStyle(color: Colors.teal.shade600),
-                  ),
-                  onPressed: pick,
+                decoration: _input(
+                  "Deskripsi (opsional)",
+                  icon: Icons.notes_rounded,
                 ),
               ),
-
-              const SizedBox(height: 22),
-
+              const SizedBox(height: 16),
+              Obx(
+                () => InkWell(
+                  onTap: pick,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.teal.shade200,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today, color: Colors.teal.shade700),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            selected.value == null
+                                ? "Pilih tanggal & waktu"
+                                : DateFormat(
+                                    'dd MMM yyyy • HH:mm',
+                                  ).format(selected.value!),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: selected.value == null
+                                  ? Colors.grey.shade600
+                                  : Colors.teal.shade800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 26),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                   ),
-
                   onPressed: () {
                     if (titleC.text.isEmpty || selected.value == null) {
                       Get.snackbar(
                         "Perhatian",
-                        "Semua data harus diisi",
+                        "Judul dan tanggal wajib diisi",
+                        backgroundColor: Colors.red.shade100,
+                      );
+                      return;
+                    }
+
+                    if (selected.value!.isBefore(DateTime.now())) {
+                      Get.snackbar(
+                        "Agenda tidak valid",
+                        "Agenda hanya boleh dijadwalkan ke waktu mendatang",
                         backgroundColor: Colors.red.shade100,
                       );
                       return;
@@ -516,16 +661,19 @@ class _AgendaViewState extends State<AgendaView> {
                       date: selected.value!,
                     );
 
-                    if (agenda == null) {
-                      controller.addAgenda(item);
-                    } else {
-                      controller.updateAgenda(item);
-                    }
-
+                    agenda == null
+                        ? controller.addAgenda(item)
+                        : controller.updateAgenda(item);
                     Get.back();
                   },
-
-                  child: Text(agenda == null ? "Simpan" : "Perbarui"),
+                  child: Text(
+                    agenda == null ? "SIMPAN AGENDA" : "PERBARUI AGENDA",
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -535,18 +683,28 @@ class _AgendaViewState extends State<AgendaView> {
     );
   }
 
-  InputDecoration _input(String label) {
+  InputDecoration _input(String label, {IconData? icon}) {
     return InputDecoration(
       labelText: label,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      prefixIcon: icon != null ? Icon(icon) : null,
+      floatingLabelBehavior: FloatingLabelBehavior.auto,
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: Colors.teal.shade700, width: 2),
       ),
     );
   }
 
-  // ===================== DELETE ==========================
   void _deleteConfirm(AgendaOrganisasi a) {
     if (!auth.isAdmin) {
       Get.snackbar("Akses Ditolak", "Hanya admin yang bisa menghapus agenda");

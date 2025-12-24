@@ -16,50 +16,46 @@ class _HomeViewState extends State<HomeView>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0;
+  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-
-    // Pastikan controller tidak null
     Get.put(OrgController());
     Get.put(KeuanganController());
 
     _scrollController.addListener(() {
-      setState(() {
-        _scrollOffset = _scrollController.offset;
-      });
+      setState(() => _scrollOffset = _scrollController.offset);
     });
   }
 
   Color _blendColor(Color start, Color end) {
-    double t = (_scrollOffset / 220).clamp(0.0, 1.0);
+    final t = (_scrollOffset / 220).clamp(0.0, 1.0);
     return Color.lerp(start, end, t)!;
   }
 
   BorderRadius _dynamicBorderRadius() {
-    double radius = (40 - _scrollOffset / 5).clamp(0.0, 40.0);
+    final r = (40 - _scrollOffset / 5).clamp(0.0, 40.0);
     return BorderRadius.only(
-      bottomLeft: Radius.circular(radius),
-      bottomRight: Radius.circular(radius),
+      bottomLeft: Radius.circular(r),
+      bottomRight: Radius.circular(r),
     );
   }
 
   double _dynamicHeaderHeight() {
-    double minHeight = 100;
-    double maxHeight = 220;
-    double t = (_scrollOffset / 250).clamp(0.0, 1.0);
-    return maxHeight - (maxHeight - minHeight) * t;
+    const minH = 100.0;
+    const maxH = 220.0;
+    final t = (_scrollOffset / 250).clamp(0.0, 1.0);
+    return maxH - (maxH - minH) * t;
   }
 
-  double _headerOpacity() {
-    return (1 - _scrollOffset / 200).clamp(0.0, 1.0);
-  }
+  double _headerOpacity() => (1 - _scrollOffset / 200).clamp(0.0, 1.0);
 
   @override
   Widget build(BuildContext context) {
     final c = Get.find<OrgController>();
     final themeC = Get.find<ThemeController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final colorBG = Theme.of(context).colorScheme.background;
     final colorText = Theme.of(context).colorScheme.onBackground;
@@ -74,7 +70,7 @@ class _HomeViewState extends State<HomeView>
 
           return Stack(
             children: [
-              // HEADER BACKGROUND
+              // ================= HEADER =================
               AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
                 height: _dynamicHeaderHeight(),
@@ -95,7 +91,7 @@ class _HomeViewState extends State<HomeView>
                 ),
               ),
 
-              // CONTENT
+              // ================= CONTENT =================
               SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
@@ -121,11 +117,7 @@ class _HomeViewState extends State<HomeView>
                     ),
                     const SizedBox(height: 16),
                     _menuGrid(context, c),
-                    const SizedBox(height: 30),
-                    _pengumumanHeader(),
-                    const SizedBox(height: 12),
-                    _pengumumanList(),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 140),
                   ],
                 ),
               ),
@@ -133,11 +125,13 @@ class _HomeViewState extends State<HomeView>
           );
         }),
       ),
-      bottomNavigationBar: _bottomNav(context),
+
+      // 🔥 FOOTER KONDISIONAL
+      bottomNavigationBar: _modernFooter(context, isDark),
     );
   }
 
-  // HEADER
+  // ================= HEADER ROW =================
   Widget _header(ThemeController themeC) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -168,18 +162,17 @@ class _HomeViewState extends State<HomeView>
             IconButton(
               icon: Icon(
                 themeC.isDark ? Icons.dark_mode : Icons.light_mode,
-                size: 28,
                 color: Colors.white,
               ),
-              onPressed: () => themeC.toggleTheme(),
+              onPressed: themeC.toggleTheme,
             ),
           ],
-        )
+        ),
       ],
     );
   }
 
-  // CABINET CARD
+  // ================= CABINET CARD =================
   Widget _cabinetCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -206,21 +199,18 @@ class _HomeViewState extends State<HomeView>
             ),
           ),
           const SizedBox(width: 16),
-          Expanded(
+          const Expanded(
             child: Text(
               "KABINET ARUNIKA 2025\nHimpunan Mahasiswa Informatika\nUniversitas Muhammadiyah Malang",
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: TextStyle(fontSize: 14),
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  // MENU GRID
+  // ================= MENU GRID =================
   Widget _menuGrid(BuildContext context, OrgController c) {
     return GridView.count(
       shrinkWrap: true,
@@ -230,38 +220,19 @@ class _HomeViewState extends State<HomeView>
       mainAxisSpacing: 16,
       children: [
         _menuButton(context, Icons.assignment, 'Program Kerja', Colors.teal,
-            () {
-          Get.toNamed(Routes.BIDANG);
-        }),
-        _menuButton(context, Icons.event, 'Agenda', Colors.cyan, () {
-          Get.toNamed(Routes.AGENDA_ORGANISASI);
-        }),
-        _menuButton(
-            context, Icons.check_circle_outline, 'Absensi', Colors.green, () {
-          if (c.bidangList.isEmpty) {
-            Get.snackbar("Info", "Belum ada agenda untuk absensi");
-            return;
-          }
-          Get.toNamed(Routes.ATTENDANCE_AGENDA);
-        }),
-        _menuButton(
-            context, Icons.account_tree_outlined, 'Struktur', Colors.teal, () {
-          Get.toNamed(Routes.STRUKTUR);
-        }),
-        _menuButton(context, Icons.flag, 'Visi & Misi', Colors.deepOrange, () {
-          Get.toNamed(Routes.VISI_MISI);
-        }),
-        _menuButton(context, Icons.bar_chart, 'Laporan', Colors.indigo, () {
-          Get.toNamed(Routes.LAPORAN);
-        }),
-        _menuButton(context, Icons.account_balance_wallet_rounded, 'Keuangan',
-            Colors.orange, () {
-          Get.toNamed(Routes.KEUANGAN);
-        }),
-        _menuButton(context, Icons.my_location, 'Live Location', Colors.blue,
-            () {
-          Get.toNamed(Routes.LOKASI);
-        }),
+            () => Get.toNamed(Routes.BIDANG)),
+        _menuButton(context, Icons.event, 'Agenda', Colors.cyan,
+            () => Get.toNamed(Routes.AGENDA_ORGANISASI)),
+        _menuButton(context, Icons.check_circle_outline, 'Absensi', Colors.green,
+            () => Get.toNamed(Routes.ATTENDANCE_AGENDA)),
+        _menuButton(context, Icons.account_tree_outlined, 'Struktur', Colors.teal,
+            () => Get.toNamed(Routes.STRUKTUR)),
+        _menuButton(context, Icons.flag, 'Visi & Misi', Colors.deepOrange,
+            () => Get.toNamed(Routes.VISI_MISI)),
+        _menuButton(context, Icons.bar_chart, 'Laporan', Colors.indigo,
+            () => Get.toNamed(Routes.LAPORAN)),
+        _menuButton(context, Icons.account_balance_wallet, 'Keuangan',
+            Colors.orange, () => Get.toNamed(Routes.KEUANGAN)),
       ],
     );
   }
@@ -294,167 +265,86 @@ class _HomeViewState extends State<HomeView>
             CircleAvatar(
               radius: 26,
               backgroundColor: color.withOpacity(0.1),
-              child: Icon(icon, color: color, size: 28),
+              child: Icon(icon, color: color),
             ),
             const SizedBox(height: 8),
-            Text(label,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
-                )),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
       ),
     );
   }
 
-  // ========================================================
-  // PENGUMUMAN HEADER
-  // ========================================================
-  Widget _pengumumanHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Pengumuman Terbaru',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onBackground,
+  // ================= FOOTER =================
+  Widget _modernFooter(BuildContext context, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        // 🌙 DARK MODE → WARNA LAMA
+        color: isDark ? const Color(0xFF1E1E1E) : null,
+
+        // 🌞 LIGHT MODE → GRADIENT HEADER
+        gradient: isDark
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF009688),
+                  Color(0xFF4DB6AC),
+                  Color(0xFF80CBC4),
+                ],
+              ),
+
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
           ),
-        ),
-        TextButton(
-          onPressed: () => Get.toNamed(Routes.PENGUMUMAN),
-          child: const Text("Lihat Semua"),
-        ),
-      ],
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _footerItem(Icons.home, "Beranda", 0),
+          _footerItem(Icons.event, "Agenda", 1),
+          _footerItem(Icons.notifications, "Notifikasi", 2),
+          _footerItem(Icons.person, "Profil", 3),
+        ],
+      ),
     );
   }
 
-  // ========================================================
-  // PENGUMUMAN LIST — Aman dari null
-  // ========================================================
-  Widget _pengumumanList() {
-    final dummy = [
-      {
-        "title": "Rapat Besar HMIF 2025",
-        "date": "28 November 2025",
-        "desc": "Seluruh pengurus diwajibkan hadir pada pukul 19.00 WIB."
-      },
-      {
-        "title": "Pengumpulan Laporan Progress",
-        "date": "27 November 2025",
-        "desc": "Semua bidang wajib mengumpulkan laporan perkembangan."
-      },
-      {
-        "title": "Open Recruitment Panitia",
-        "date": "24 November 2025",
-        "desc": "Kesempatan bergabung sebagai panitia event besar tahun ini."
-      },
-    ];
+  Widget _footerItem(IconData icon, String label, int index) {
+    final active = _currentIndex == index;
 
-    final limited = dummy.take(3).toList();
-
-    return Column(
-      children: limited.map((ann) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
+    return GestureDetector(
+      onTap: () {
+        setState(() => _currentIndex = index);
+        if (index == 1) Get.toNamed(Routes.AGENDA_ORGANISASI);
+        if (index == 2) Get.toNamed(Routes.NOTIFIKASI);
+        if (index == 3) Get.toNamed(Routes.PROFILE);
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              size: 26,
+              color: active ? Colors.white : Colors.white70),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: active ? FontWeight.bold : FontWeight.normal,
+              color: active ? Colors.white : Colors.white70,
+            ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child:
-                    const Icon(Icons.campaign, color: Colors.purple, size: 26),
-              ),
-              const SizedBox(width: 14),
-
-              // TEXT
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ann["title"] ?? "",
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      ann["date"] ?? "",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      ann["desc"] ?? "",
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // ========================================================
-  // BOTTOM NAVIGATION
-  // ========================================================
-  Widget _bottomNav(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      selectedItemColor: Colors.teal.shade700,
-      unselectedItemColor:
-          Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-      onTap: (index) {
-        if (index == 3) {
-          Get.toNamed(Routes.PROFILE);
-        } else if (index == 2) {
-          Get.toNamed(Routes.AGENDA_ORGANISASI);
-        } else if (index == 1) {
-          Get.toNamed(Routes.NOTIFIKASI);
-          // NOTIFIKASI → ke pengumuman
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.notifications), label: "Notifikasi"),
-        BottomNavigationBarItem(icon: Icon(Icons.event), label: "Agenda"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profil"),
-      ],
+        ],
+      ),
     );
   }
 }

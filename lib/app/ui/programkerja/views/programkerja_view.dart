@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:orgtrack/app/controllers/theme_controller.dart'; // 🔥 ADD
+import 'package:orgtrack/app/controllers/theme_controller.dart';
 import 'package:orgtrack/app/ui/programkerja/controllers/programkerja_controller.dart';
 import 'package:orgtrack/app/ui/programkerja/controllers/programkerja_dio.dart';
 import '../controllers/program_kerja_mode.dart';
@@ -24,6 +24,9 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
   late final ProgramControllerDio dioC;
   late final ModeController modeC;
 
+  // search
+  final RxString q = "".obs;
+
   @override
   void initState() {
     super.initState();
@@ -31,92 +34,53 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
     dioC = Get.put(ProgramControllerDio());
     modeC = Get.put(ModeController());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (modeC.mode.value == FetchMode.http) {
-        httpC.fetchProgramByBidang(widget.bidangId);
-      } else {
-        dioC.fetchProgramByBidang(widget.bidangId);
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetch());
+    ever<FetchMode>(modeC.mode, (_) => _fetch());
+  }
 
-    ever<FetchMode>(modeC.mode, (m) {
-      if (m == FetchMode.http) {
-        httpC.fetchProgramByBidang(widget.bidangId);
-      } else {
-        dioC.fetchProgramByBidang(widget.bidangId);
-      }
-    });
+  void _fetch() {
+    if (modeC.mode.value == FetchMode.http) {
+      httpC.fetchProgramByBidang(widget.bidangId);
+    } else {
+      dioC.fetchProgramByBidang(widget.bidangId);
+    }
+  }
+
+  // sama persis seperti Bidang (gradient teal)
+  List<Color> _headerGradient(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark
+        ? const [Color(0xFF004D40), Color(0xFF00695C), Color(0xFF00796B)]
+        : const [Color(0xFF009688), Color(0xFF4DB6AC), Color(0xFF80CBC4)];
+  }
+
+  List _filterList(List list) {
+    final keyword = q.value.trim().toLowerCase();
+    if (keyword.isEmpty) return list;
+
+    return list.where((p) {
+      final judul = (p.judul ?? "").toString().toLowerCase();
+      final desk = (p.deskripsi ?? "").toString().toLowerCase();
+      return judul.contains(keyword) || desk.contains(keyword);
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeC = Get.find<ThemeController>(); // 🔥 ADD
-
+    final themeC = Get.find<ThemeController>();
     final bg = Theme.of(context).colorScheme.background;
     final cardColor = Theme.of(context).cardColor;
     final textColor = Theme.of(context).colorScheme.onBackground;
-    final surface = Theme.of(context).colorScheme.surface;
 
     return Scaffold(
       backgroundColor: bg,
-
-      // ===========================================================
-      // APPBAR (ADD TOGGLE THEME)
-      // ===========================================================
-      appBar: AppBar(
-        backgroundColor: surface,
-        elevation: 0.4,
-
-        title: Text(
-          "Program: ${widget.bidangName}",
-          style: TextStyle(color: textColor),
-        ),
-        iconTheme: IconThemeData(color: textColor),
-
-        actions: [
-          // 🔥 Toggle Dark/Light Mode
-          Obx(() {
-            return IconButton(
-              icon: Icon(
-                themeC.isDark ? Icons.dark_mode : Icons.light_mode,
-                color: textColor,
-                size: 26,
-              ),
-              onPressed: () => themeC.toggleTheme(),
-            );
-          }),
-
-          // 🔥 Dropdown HTTP / DIO (existing)
-          Obx(() {
-            return DropdownButton<FetchMode>(
-              value: modeC.mode.value,
-              underline: const SizedBox(),
-              dropdownColor: cardColor,
-              style: TextStyle(color: textColor),
-              icon: Icon(Icons.expand_more, color: textColor),
-              items: const [
-                DropdownMenuItem(value: FetchMode.http, child: Text("HTTP")),
-                DropdownMenuItem(value: FetchMode.dio, child: Text("DIO")),
-              ],
-              onChanged: (v) {
-                if (v != null) modeC.mode.value = v;
-              },
-            );
-          }),
-          const SizedBox(width: 8),
-        ],
-      ),
-
-      // ===========================================================
-      // BODY
-      // ===========================================================
       body: Obx(() {
         final isHttp = modeC.mode.value == FetchMode.http;
-        final list = isHttp ? httpC.programList : dioC.programList;
+
+        final listRaw = isHttp ? httpC.programList : dioC.programList;
         final loading = isHttp ? httpC.loadingProgram : dioC.loadingProgram;
-        final lastMs = isHttp ? httpC.lastFetchMs : dioC.lastFetchMs;
-        final avgMs = isHttp ? httpC.averageFetchMs : dioC.averageFetchMs;
-        final records = isHttp ? httpC.records : dioC.records;
+
+        final list = _filterList(listRaw);
 
         if (loading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -124,46 +88,165 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
 
         return Column(
           children: [
-            // =======================================================
-            // INFO BAR (Mode & Fetch Time)
-            // =======================================================
+            // ==========================================================
+            // HEADER (SAMA POLA DENGAN BIDANG)
+            // ==========================================================
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 12),
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey.shade100,
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.black.withOpacity(
-                      Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.05,
-                    ),
-                  ),
+                gradient: LinearGradient(
+                  colors: _headerGradient(context),
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Mode: ${isHttp ? 'HTTP' : 'DIO'}",
-                      style: TextStyle(color: textColor)),
-                  Text("Last fetch: $lastMs ms",
-                      style: TextStyle(color: textColor)),
-                  Text("Average fetch: $avgMs ms",
-                      style: TextStyle(color: textColor)),
+                  // row atas: back - title - actions (theme + dropdown)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Get.back(),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+
+                      Expanded(
+                        child: Column(
+                          children: [
+                            const Text(
+                              "Program Kerja",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.bidangName,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Row(
+                        children: [
+                          // toggle theme (sama seperti Bidang)
+                          Obx(() {
+                            return IconButton(
+                              icon: Icon(
+                                themeC.isDark ? Icons.dark_mode : Icons.light_mode,
+                                size: 26,
+                                color: Colors.white,
+                              ),
+                              onPressed: () => themeC.toggleTheme(),
+                            );
+                          }),
+
+                          const SizedBox(width: 6),
+
+                          // mode dropdown pill (sama seperti Bidang)
+                          Obx(() {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: DropdownButton<FetchMode>(
+                                value: modeC.mode.value,
+                                underline: const SizedBox(),
+                                dropdownColor: cardColor,
+                                icon: const Icon(Icons.expand_more, color: Colors.white),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                items: const [
+                                  DropdownMenuItem(value: FetchMode.http, child: Text("HTTP")),
+                                  DropdownMenuItem(value: FetchMode.dio, child: Text("DIO")),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) modeC.mode.value = val;
+                                },
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // search bar pill (sama seperti Bidang)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(
+                            Theme.of(context).brightness == Brightness.dark ? 0.30 : 0.10,
+                          ),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      style: TextStyle(color: textColor),
+                      onChanged: (v) => q.value = v,
+                      decoration: InputDecoration(
+                        hintText: "Cari program kerja...",
+                        hintStyle: TextStyle(color: textColor.withOpacity(0.6)),
+                        prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        suffixIcon: Obx(() {
+                          if (q.value.isEmpty) return const SizedBox();
+                          return IconButton(
+                            icon: Icon(Icons.close_rounded, color: textColor.withOpacity(0.8)),
+                            onPressed: () {
+                              q.value = "";
+                              FocusScope.of(context).unfocus();
+                            },
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
 
-            // =======================================================
-            // LIST PROGRAM KERJA
-            // =======================================================
+            const SizedBox(height: 10),
+
+            // ==========================================================
+            // LIST PROGRAM KERJA (CARD STYLE KAYAK BIDANG)
+            // ==========================================================
             Expanded(
               child: list.isEmpty
                   ? Center(
                       child: Text(
-                        "Belum ada program kerja",
-                        style: TextStyle(color: textColor),
+                        q.value.isEmpty ? "Belum ada program kerja" : "Tidak ada hasil pencarian",
+                        style: TextStyle(color: textColor.withOpacity(0.85)),
                       ),
                     )
                   : ListView.builder(
@@ -171,120 +254,48 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
                       itemCount: list.length,
                       itemBuilder: (_, i) {
                         final p = list[i];
+
                         return Card(
                           color: cardColor,
-                          elevation:
-                              Theme.of(context).brightness == Brightness.dark ? 0 : 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
                           margin: const EdgeInsets.only(bottom: 12),
+                          elevation: Theme.of(context).brightness == Brightness.dark ? 0 : 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                           child: ListTile(
                             title: Text(
-                              p.judul,
+                              (p.judul ?? "-").toString(),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 16,
                                 color: textColor,
                               ),
                             ),
-                            subtitle: Text(
-                              p.deskripsi,
-                              style: TextStyle(
-                                color: textColor.withOpacity(0.7),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                (p.deskripsi ?? "").toString(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.75),
+                                  height: 1.3,
+                                ),
                               ),
                             ),
                             trailing: Icon(
                               Icons.arrow_forward_ios,
                               size: 16,
-                              color: textColor.withOpacity(0.6),
+                              color: textColor.withOpacity(0.7),
                             ),
+                            onTap: () {
+                              // kalau kamu punya halaman detail, taruh di sini
+                              // Get.to(() => ProgramKerjaDetailView(data: p));
+                            },
                           ),
                         );
                       },
                     ),
-            ),
-
-            // =======================================================
-            // HISTORY FETCH
-            // =======================================================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withOpacity(0.06)
-                    : Colors.blueGrey.shade50,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "History Fetch (Last & Avg ms)",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  Obx(() {
-                    if (records.isEmpty) {
-                      return Text(
-                        "Belum ada record",
-                        style: TextStyle(color: textColor),
-                      );
-                    }
-
-                    return Column(
-                      children: records.map((r) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // endpoint
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  r.endpoint,
-                                  style: TextStyle(color: textColor),
-                                ),
-                              ),
-
-                              // last ms
-                              Expanded(
-                                flex: 1,
-                                child: Text(
-                                  "${r.lastMs} ms",
-                                  style: TextStyle(color: textColor),
-                                ),
-                              ),
-
-                              // average ms
-                              Expanded(
-                                flex: 1,
-                                child: Text(
-                                  "${r.averageMs} ms",
-                                  style: TextStyle(color: textColor),
-                                ),
-                              ),
-
-                              // mode
-                              Expanded(
-                                flex: 1,
-                                child: Text(
-                                  r.mode,
-                                  style: TextStyle(color: textColor),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  }),
-                ],
-              ),
             ),
           ],
         );

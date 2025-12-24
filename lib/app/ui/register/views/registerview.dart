@@ -12,6 +12,7 @@ class RegisterView extends StatefulWidget {
 
 class _RegisterViewState extends State<RegisterView>
     with TickerProviderStateMixin {
+  final usernameC = TextEditingController();
   final emailC = TextEditingController();
   final passC = TextEditingController();
 
@@ -23,7 +24,7 @@ class _RegisterViewState extends State<RegisterView>
   late Animation<double> shake;
 
   bool isError = false;
-  bool isPasswordVisible = false; // 👁️ toggle untuk lihat password
+  bool isPasswordVisible = false;
 
   @override
   void initState() {
@@ -64,7 +65,6 @@ class _RegisterViewState extends State<RegisterView>
   void triggerError() async {
     setState(() => isError = true);
     shakeController.forward(from: 0);
-
     await Future.delayed(const Duration(milliseconds: 900));
     setState(() => isError = false);
   }
@@ -73,6 +73,7 @@ class _RegisterViewState extends State<RegisterView>
   void dispose() {
     fadeController.dispose();
     shakeController.dispose();
+    usernameC.dispose();
     emailC.dispose();
     passC.dispose();
     super.dispose();
@@ -105,7 +106,7 @@ class _RegisterViewState extends State<RegisterView>
                 opacity: fadeHeader,
                 child: Center(
                   child: Image.asset(
-                    "assets/images/arunika.jpg",
+                    "assets/images/arunobg.png",
                     height: 200,
                   ),
                 ),
@@ -121,14 +122,11 @@ class _RegisterViewState extends State<RegisterView>
                     child: child,
                   );
                 },
-
                 child: SlideTransition(
                   position: slideCard,
                   child: Container(
                     width: double.infinity,
-                    constraints: BoxConstraints(
-                      minHeight: height - 290,
-                    ),
+                    constraints: BoxConstraints(minHeight: height - 290),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
                       vertical: 30,
@@ -140,7 +138,6 @@ class _RegisterViewState extends State<RegisterView>
                         topRight: Radius.circular(40),
                       ),
                     ),
-
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -152,7 +149,6 @@ class _RegisterViewState extends State<RegisterView>
                             color: Colors.black87,
                           ),
                         ),
-
                         const SizedBox(height: 6),
 
                         Row(
@@ -160,9 +156,9 @@ class _RegisterViewState extends State<RegisterView>
                             Text(
                               "Already have an account?",
                               style: GoogleFonts.inter(
-                                color: Colors.black87,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
                             ),
                             TextButton(
@@ -171,7 +167,6 @@ class _RegisterViewState extends State<RegisterView>
                                 "Login",
                                 style: GoogleFonts.inter(
                                   color: const Color(0xFF00A6AF),
-                                  fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -179,19 +174,29 @@ class _RegisterViewState extends State<RegisterView>
                           ],
                         ),
 
-                        const SizedBox(height: 25),
+                        const SizedBox(height: 28),
+
+                        // USERNAME
+                        _inputField(
+                          controller: usernameC,
+                          hint: "Username",
+                          icon: Icons.person_outline,
+                          error: isError,
+                        ),
+
+                        const SizedBox(height: 18),
 
                         // EMAIL
                         _inputField(
                           controller: emailC,
-                          hint: "Enter your email",
+                          hint: "Enter your email address",
                           icon: Icons.email_outlined,
                           error: isError,
                         ),
 
                         const SizedBox(height: 18),
 
-                        // PASSWORD + show/hide
+                        // PASSWORD
                         _inputField(
                           controller: passC,
                           hint: "Password",
@@ -206,15 +211,17 @@ class _RegisterViewState extends State<RegisterView>
                           },
                         ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 28),
 
+                        // REGISTER BUTTON
                         Obx(() {
                           return SizedBox(
                             width: double.infinity,
                             height: 55,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00B8C0),
+                                backgroundColor:
+                                    const Color(0xFF00B8C0),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
@@ -222,26 +229,36 @@ class _RegisterViewState extends State<RegisterView>
                               onPressed: auth.isLoading.value
                                   ? null
                                   : () async {
-                                      final email = emailC.text.trim();
-                                      final pass = passC.text.trim();
+                                      final username =
+                                          usernameC.text.trim();
+                                      final email =
+                                          emailC.text.trim();
+                                      final pass =
+                                          passC.text.trim();
 
-                                      String? validationMsg;
+                                      String? msg;
 
-                                      if (email.isEmpty || pass.isEmpty) {
-                                        validationMsg =
-                                            "Email dan password tidak boleh kosong.";
-                                      } else if (!GetUtils.isEmail(email)) {
-                                        validationMsg =
+                                      if (username.isEmpty ||
+                                          email.isEmpty ||
+                                          pass.isEmpty) {
+                                        msg =
+                                            "Semua field wajib diisi.";
+                                      } else if (username.length < 3) {
+                                        msg =
+                                            "Username minimal 3 karakter.";
+                                      } else if (!GetUtils
+                                          .isEmail(email)) {
+                                        msg =
                                             "Format email tidak valid.";
                                       } else if (pass.length < 6) {
-                                        validationMsg =
+                                        msg =
                                             "Password minimal 6 karakter.";
                                       }
 
-                                      if (validationMsg != null) {
+                                      if (msg != null) {
                                         Get.snackbar(
                                           "Validasi gagal",
-                                          validationMsg,
+                                          msg,
                                           snackPosition:
                                               SnackPosition.TOP,
                                         );
@@ -249,8 +266,12 @@ class _RegisterViewState extends State<RegisterView>
                                         return;
                                       }
 
-                                      bool success =
-                                          await auth.register(email, pass);
+                                      final success =
+                                          await auth.register(
+                                        username,
+                                        email,
+                                        pass,
+                                      );
 
                                       if (!success) triggerError();
                                     },
@@ -270,28 +291,30 @@ class _RegisterViewState extends State<RegisterView>
                           );
                         }),
 
-                        const SizedBox(height: 30),
+                        // ===== TEKS PENUTUP =====
+                        const SizedBox(height: 26),
 
                         Center(
-                          child: Text(
-                            "Or Continue With",
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Column(
+                            children: [
+                              Text(
+                                "Buat akun baru 👋",
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Isi data untuk mulai menggunakan aplikasi",
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _social("Apple", Icons.apple),
-                            const SizedBox(width: 15),
-                            _social("Google", Icons.g_mobiledata),
-                          ],
                         ),
 
                         const SizedBox(height: 40),
@@ -307,9 +330,7 @@ class _RegisterViewState extends State<RegisterView>
     );
   }
 
-  // ==========================
-  // INPUT FIELD
-  // ==========================
+  // ================= INPUT FIELD =================
   Widget _inputField({
     required TextEditingController controller,
     required String hint,
@@ -323,25 +344,27 @@ class _RegisterViewState extends State<RegisterView>
       duration: const Duration(milliseconds: 300),
       height: 50,
       decoration: BoxDecoration(
-        color: error ? Colors.red.shade50 : const Color(0xFFF0F3F6),
+        color: error
+            ? Colors.red.shade50
+            : const Color(0xFFF0F3F6),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: error ? Colors.red.shade300 : Colors.black26,
+          color: error
+              ? Colors.red.shade300
+              : Colors.black26,
           width: error ? 1.8 : 1.2,
         ),
       ),
       child: Row(
         children: [
           const SizedBox(width: 12),
-
           Icon(
             icon,
-            color: error ? Colors.red.shade400 : Colors.black87,
+            color:
+                error ? Colors.red.shade400 : Colors.black87,
             size: 22,
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: TextField(
               controller: controller,
@@ -361,8 +384,6 @@ class _RegisterViewState extends State<RegisterView>
                 isDense: true,
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 10),
-
-                // 👁️ Lihat/Sembunyikan password
                 suffixIcon: isPassword
                     ? IconButton(
                         icon: Icon(
@@ -375,40 +396,6 @@ class _RegisterViewState extends State<RegisterView>
                       )
                     : null,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================
-  // SOCIAL LOGIN BUTTON
-  // ==========================
-  Widget _social(String title, IconData icon) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding:
-          const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.black26, width: 1.3),
-        color: Colors.white,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 28,
-            color: Colors.black87,
-          ),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
             ),
           ),
         ],

@@ -6,461 +6,397 @@ import '../../../controllers/theme_controller.dart';
 import '../../agenda/controllers/agenda_controller.dart';
 import '../../../routes/app_pages.dart';
 
-class NotifikasiView extends StatelessWidget {
-  NotifikasiView({super.key});
+class NotifikasiView extends StatefulWidget {
+  const NotifikasiView({super.key});
 
+  @override
+  State<NotifikasiView> createState() => _NotifikasiViewState();
+}
+
+class _NotifikasiViewState extends State<NotifikasiView> {
   final AgendaController c = Get.find<AgendaController>();
-  final themeC = Get.find<ThemeController>();
+  final ThemeController themeC = Get.find<ThemeController>();
 
-  final searchCtrl = TextEditingController();
-  final RxString filter = "Semua".obs; // Semua, Belum Dibaca, Sudah Dibaca, Hari Ini, Minggu Ini
-  final RxInt currentIndex = 1.obs;
+  final TextEditingController searchCtrl = TextEditingController();
+  final RxString filter = "Semua".obs;
+
+  int _currentIndex = 2; // 🔥 NOTIFIKASI AKTIF
 
   @override
   Widget build(BuildContext context) {
-    final colorBG = Theme.of(context).colorScheme.background;
-    final cardColor = Theme.of(context).cardColor;
-    final colorText = Theme.of(context).colorScheme.onBackground;
+    final bg = Theme.of(context).colorScheme.background;
+    final text = Theme.of(context).colorScheme.onBackground;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: colorBG,
-
+      backgroundColor: bg,
       body: Column(
         children: [
-          // =====================================================
-          // ===================== HEADER ========================
-          // =====================================================
-          Container(
-            padding: const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: themeC.isDark
-                    ? const [
-                        Color(0xFF00332E),
-                        Color(0xFF004D40),
-                        Color(0xFF003E39),
-                      ]
-                    : const [
-                        Color(0xFF009688),
-                        Color(0xFF4DB6AC),
-                        Color(0xFF80CBC4),
-                      ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          _header(context),
+          _body(text),
+        ],
+      ),
+      bottomNavigationBar: _modernFooter(context, isDark),
+    );
+  }
+
+  // =========================================================
+  // HEADER
+  // =========================================================
+  Widget _header(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 48, 20, 24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: themeC.isDark
+              ? const [Color(0xFF00332E), Color(0xFF004D40)]
+              : const [Color(0xFF009688), Color(0xFF4DB6AC)],
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _circleBtn(Icons.arrow_back_ios_new_rounded, Get.back),
+              const Text(
+                "Notifikasi",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
               ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(32),
-                bottomRight: Radius.circular(32),
+              IconButton(
+                icon: Icon(
+                  themeC.isDark ? Icons.dark_mode : Icons.light_mode,
+                  color: Colors.white,
+                ),
+                onPressed: themeC.toggleTheme,
+              )
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: TextField(
+              controller: searchCtrl,
+              onChanged: (_) => c.notifications.refresh(),
+              decoration: const InputDecoration(
+                hintText: "Cari notifikasi...",
+                prefixIcon: Icon(Icons.search),
+                border: InputBorder.none,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               ),
             ),
-
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // BACK
-                    GestureDetector(
-                      onTap: () => Get.back(),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.22),
-                          shape: BoxShape.circle,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Obx(
+                () => PopupMenuButton<String>(
+                  onSelected: (v) => filter.value = v,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.filter_alt_rounded,
+                          color: Colors.white),
+                      const SizedBox(width: 6),
+                      Text(
+                        filter.value,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded,
-                            size: 20, color: Colors.white),
                       ),
-                    ),
+                    ],
+                  ),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: "Semua", child: Text("Semua")),
+                    PopupMenuItem(
+                        value: "Belum Dibaca",
+                        child: Text("Belum Dibaca")),
+                    PopupMenuItem(
+                        value: "Sudah Dibaca",
+                        child: Text("Sudah Dibaca")),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _markAllRead,
+                icon: const Icon(Icons.done_all, color: Colors.white),
+                label: const Text(
+                  "Tandai Semua",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
 
-                    const Text(
-                      "Notifikasi",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
+  // =========================================================
+  // BODY
+  // =========================================================
+  Widget _body(Color textColor) {
+    return Expanded(
+      child: Obx(() {
+        if (c.loading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-                    // TOGGLE MODE
-                    IconButton(
-                      icon: Icon(
-                        themeC.isDark ? Icons.dark_mode : Icons.light_mode,
-                        color: Colors.white,
-                      ),
-                      onPressed: themeC.toggleTheme,
+        var list = c.notifications.where((a) {
+          return a.title
+              .toLowerCase()
+              .contains(searchCtrl.text.toLowerCase());
+        }).toList();
+
+        if (filter.value == "Belum Dibaca") {
+          list = list.where((a) => !a.isread).toList();
+        } else if (filter.value == "Sudah Dibaca") {
+          list = list.where((a) => a.isread).toList();
+        }
+
+        if (list.isEmpty) return _emptyState();
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: list.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, i) {
+            final n = list[i];
+
+            return InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () {
+                c.markAsRead(n);
+                _detail(n);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
                     )
                   ],
                 ),
-
-                const SizedBox(height: 16),
-
-                // ===================== SEARCH BAR =====================
-                Container(
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(26),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      )
-                    ],
-                  ),
-                  child: TextField(
-                    controller: searchCtrl,
-                    onChanged: (_) => c.notifications.refresh(),
-                    style: TextStyle(color: colorText),
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.search, color: colorText.withOpacity(0.6)),
-                      hintText: "Cari notifikasi...",
-                      border: InputBorder.none,
-                      hintStyle: TextStyle(color: colorText.withOpacity(0.5)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Row(
                   children: [
-                    // ================== DROPDOWN FILTER ==================
-                    Obx(
-                      () => PopupMenuButton<String>(
-                        color: cardColor,
-                        onSelected: (v) => filter.value = v,
-                        child: Row(
-                          children: [
-                            Icon(Icons.filter_alt_rounded, color: Colors.white),
-                            const SizedBox(width: 6),
-                            Text(filter.value,
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(value: "Semua", child: Text("Semua")),
-                          const PopupMenuItem(value: "Belum Dibaca", child: Text("Belum Dibaca")),
-                          const PopupMenuItem(value: "Sudah Dibaca", child: Text("Sudah Dibaca")),
-                          const PopupMenuItem(value: "Hari Ini", child: Text("Hari Ini")),
-                          const PopupMenuItem(value: "Minggu Ini", child: Text("Minggu Ini")),
+                    _iconCircle(n),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            n.title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _timeAgo(n.date),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600),
+                          ),
                         ],
                       ),
                     ),
-
-                    // ============ TANDAI SEMUA TERBACA =============
-                    TextButton.icon(
-                      onPressed: () => _markAllRead(),
-                      icon: const Icon(Icons.done_all, color: Colors.white),
-                      label: const Text("Tandai Semua", style: TextStyle(color: Colors.white)),
-                    ),
+                    if (!n.isread)
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      )
                   ],
                 ),
-              ],
+              ),
+            );
+          },
+        );
+      }),
+    );
+  }
+
+  // =========================================================
+  // FOOTER — 100% SAMA HOME
+  // =========================================================
+  Widget _modernFooter(BuildContext context, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : null,
+        gradient: isDark
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF009688),
+                  Color(0xFF4DB6AC),
+                  Color(0xFF80CBC4),
+                ],
+              ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _footerItem(Icons.home, "Beranda", 0),
+          _footerItem(Icons.event, "Agenda", 1),
+          _footerItem(Icons.notifications, "Notifikasi", 2),
+          _footerItem(Icons.person, "Profil", 3),
+        ],
+      ),
+    );
+  }
+
+  Widget _footerItem(IconData icon, String label, int index) {
+    final active = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() => _currentIndex = index);
+
+        if (index == 0) Get.offAllNamed(Routes.HOME);
+        if (index == 1) Get.offAllNamed(Routes.AGENDA_ORGANISASI);
+        if (index == 2) {}
+        if (index == 3) Get.offAllNamed(Routes.PROFILE);
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 26,
+            color: active ? Colors.white : Colors.white70,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: active ? FontWeight.bold : FontWeight.normal,
+              color: active ? Colors.white : Colors.white70,
             ),
           ),
-
-          // =====================================================
-          // ===================== LIST BODY =====================
-          // =====================================================
-          Expanded(
-            child: Obx(() {
-              if (c.loading.value) return const Center(child: CircularProgressIndicator());
-
-              // ================= FILTER SEARCH ==================
-              var list = c.notifications.where((a) {
-                return a.title.toLowerCase().contains(searchCtrl.text.toLowerCase());
-              }).toList();
-
-              // ================== FILTER CATEGORY =================
-              if (filter.value == "Belum Dibaca") {
-                list = list.where((a) => a.isread == false).toList();
-              } else if (filter.value == "Sudah Dibaca") {
-                list = list.where((a) => a.isread == true).toList();
-              } else if (filter.value == "Hari Ini") {
-                list = list.where((a) => DateUtils.isSameDay(a.date, DateTime.now())).toList();
-              } else if (filter.value == "Minggu Ini") {
-                final now = DateTime.now();
-                list = list.where((a) => now.difference(a.date).inDays < 7).toList();
-              }
-
-              if (list.isEmpty) return _emptyState();
-
-              final grouped = _groupByDate(list);
-
-              return ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                children: grouped.entries.map((entry) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 16),
-                      Text(
-                        entry.key,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      ...entry.value.asMap().entries.map((map) {
-                        final i = map.key;
-                        final agenda = map.value;
-
-                        return TweenAnimationBuilder(
-                          duration: Duration(milliseconds: 350 + (i * 80)),
-                          tween: Tween<double>(begin: 0, end: 1),
-                          builder: (_, v, child) => Opacity(
-                            opacity: v,
-                            child: Transform.translate(
-                              offset: Offset(0, 40 * (1 - v)),
-                              child: child,
-                            ),
-                          ),
-                          child: Dismissible(
-                            key: ValueKey(agenda.id),
-                            background: _deleteBg(),
-                            direction: DismissDirection.endToStart,
-                            onDismissed: (_) => c.deleteNotification(agenda),
-
-                            child: InkWell(
-                              onTap: () {
-                                c.markAsRead(agenda);
-                                _showDetail(context, agenda);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _iconCircle(agenda),
-                                    const SizedBox(width: 12),
-                                    Expanded(child: _notificationText(agenda, colorText)),
-                                    if (!agenda.isread)
-                                      Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.red,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ],
-                  );
-                }).toList(),
-              );
-            }),
-          ),
-        ],
-      ),
-
-      bottomNavigationBar: _bottomNav(),
-    );
-  }
-
-  // ===========================================================
-  // ===================== COMPONENTS ==========================
-  // ===========================================================
-
-  Widget _emptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.notifications_off, size: 80, color: Colors.grey.shade400),
-          const SizedBox(height: 10),
-          const Text("Tidak ada notifikasi", style: TextStyle(fontSize: 16)),
         ],
       ),
     );
   }
 
-  Widget _iconCircle(agenda) {
-    final expired = agenda.date.isBefore(DateTime.now());
+  // =========================================================
+  // UTIL
+  // =========================================================
+  Widget _circleBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.25),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
 
+  Widget _iconCircle(n) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: expired ? Colors.grey.shade200 : Colors.teal.shade50,
+        color: n.isread ? Colors.grey.shade200 : Colors.teal.shade50,
         shape: BoxShape.circle,
       ),
       child: Icon(
-        expired ? Icons.event_busy : Icons.event_available,
-        color: expired ? Colors.grey.shade600 : Colors.teal.shade700,
-        size: 26,
+        Icons.notifications,
+        color: n.isread ? Colors.grey : Colors.teal,
       ),
     );
   }
 
-  Widget _notificationText(agenda, Color colorText) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          agenda.title,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: colorText),
-        ),
-        const SizedBox(height: 4),
-        Text(_timeAgo(agenda.date), style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-      ],
-    );
-  }
-
-  Widget _deleteBg() {
-    return Container(
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 20),
-      color: Colors.red.shade400,
-      child: const Icon(Icons.delete, color: Colors.white, size: 26),
-    );
-  }
-
-  // ===================== POPUP DETAIL ======================
-  void _showDetail(BuildContext context, agenda) {
-    final formatted = DateFormat('dd MMM yyyy, HH:mm').format(agenda.date);
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(agenda.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, color: Colors.teal, size: 18),
-                const SizedBox(width: 6),
-                Text(formatted, style: TextStyle(color: Colors.grey.shade700)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(agenda.description ?? "", style: const TextStyle(fontSize: 15)),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text("Tutup")),
+  Widget _emptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.notifications_off,
+              size: 80, color: Colors.grey),
+          SizedBox(height: 12),
+          Text("Tidak ada notifikasi"),
         ],
       ),
     );
   }
 
-  // ===================== GROUPING ==========================
-  Map<String, List> _groupByDate(List list) {
-    final today = DateTime.now();
-    final yesterday = today.subtract(const Duration(days: 1));
-
-    final map = {
-      "Hari Ini": [],
-      "Kemarin": [],
-      "Minggu Ini": [],
-      "Sebelumnya": [],
-    };
-
-    for (var a in list) {
-      final diff = today.difference(a.date).inDays;
-
-      if (DateUtils.isSameDay(a.date, today)) {
-        map["Hari Ini"]!.add(a);
-      } else if (DateUtils.isSameDay(a.date, yesterday)) {
-        map["Kemarin"]!.add(a);
-      } else if (diff < 7) {
-        map["Minggu Ini"]!.add(a);
-      } else {
-        map["Sebelumnya"]!.add(a);
-      }
-    }
-
-    map.removeWhere((key, value) => value.isEmpty);
-    return map;
+  void _detail(n) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(n.title),
+        content: Text(n.description ?? "-"),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text("Tutup")),
+        ],
+      ),
+    );
   }
 
-  // ===================== TIME AGO ==========================
   String _timeAgo(DateTime date) {
     final diff = DateTime.now().difference(date);
-
     if (diff.inMinutes < 1) return "Baru saja";
     if (diff.inMinutes < 60) return "${diff.inMinutes} menit lalu";
     if (diff.inHours < 24) return "${diff.inHours} jam lalu";
     if (diff.inDays < 7) return "${diff.inDays} hari lalu";
-
     return DateFormat("dd MMM yyyy").format(date);
   }
 
-  // ============= TANDAI SEMUA TERBACA ======================
   void _markAllRead() {
     for (var n in c.notifications) {
-      if (!n.isread) n.isread = true;
+      n.isread = true;
     }
     c.notifications.refresh();
-  }
-
-  // ===================== BOTTOM NAV ========================
-  Widget _bottomNav() {
-    return Obx(() {
-      final unread = c.notifications.where((n) => n.isread == false).length;
-
-      return BottomNavigationBar(
-        currentIndex: currentIndex.value,
-        selectedItemColor: Colors.teal.shade700,
-        unselectedItemColor: Colors.grey.shade500,
-        type: BottomNavigationBarType.fixed,
-
-        onTap: (i) {
-          currentIndex.value = i;
-
-          if (i == 0) Get.offAllNamed(Routes.HOME);
-          if (i == 1) {}
-          if (i == 2) Get.toNamed(Routes.AGENDA_ORGANISASI);
-          if (i == 3) Get.toNamed(Routes.STRUKTUR);
-        },
-
-        items: [
-          const BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
-          BottomNavigationBarItem(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications),
-                if (unread > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.red, shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                      child: Text(
-                        unread.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            label: "Notifikasi",
-          ),
-          const BottomNavigationBarItem(icon: Icon(Icons.event_note), label: "Agenda"),
-          const BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profil"),
-        ],
-      );
-    });
   }
 }

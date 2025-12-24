@@ -2,9 +2,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../controllers/profile_controller.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../controllers/theme_controller.dart';
+import '../../../routes/app_pages.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -20,8 +22,10 @@ class _ProfileViewState extends State<ProfileView>
   final themeC = Get.find<ThemeController>();
 
   late AnimationController _animController;
-  late Animation<double> _fadeContent;
-  late Animation<Offset> _slideContent;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  int _currentIndex = 3;
 
   @override
   void initState() {
@@ -29,23 +33,14 @@ class _ProfileViewState extends State<ProfileView>
 
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 500),
     );
 
-    _fadeContent = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    );
-
-    _slideContent = Tween<Offset>(
-      begin: const Offset(0, 0.18),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: Curves.easeOutBack,
-      ),
-    );
+    _fade = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _slide = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
 
     _animController.forward();
   }
@@ -58,243 +53,172 @@ class _ProfileViewState extends State<ProfileView>
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = Theme.of(context).colorScheme.background;
-    final textColor = Theme.of(context).colorScheme.onBackground;
-    final cardColor = Theme.of(context).cardColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final text = Theme.of(context).colorScheme.onBackground;
 
     return Scaffold(
-      backgroundColor: bgColor,
-
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Stack(
         children: [
-          // ================= GRADIENT HEADER =================
+          // ================= HEADER =================
           Container(
-            height: 300,
+            height: 220,
             decoration: BoxDecoration(
               gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
                 colors: themeC.isDark
-                    ? const [
-                        Color(0xFF00332E),
-                        Color(0xFF002A26),
-                      ]
+                    ? const [Color(0xFF00332E), Color(0xFF002A26)]
                     : const [
                         Color(0xFF009688),
                         Color(0xFF4DB6AC),
                         Color(0xFF80CBC4),
                       ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(35),
-                bottomRight: Radius.circular(35),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(32),
               ),
             ),
           ),
 
-          // ================= HEADER BAR =================
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16, top: 10, right: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // BACK BUTTON
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-
-                  // TITLE
-                  Text(
-                    "Profil",
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                    ),
-                  ),
-
-                  // THEME TOGGLE
-                  GestureDetector(
-                    onTap: () => themeC.toggleTheme(),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        themeC.isDark ? Icons.dark_mode : Icons.light_mode,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // ================= MAIN CONTENT =================
-          SingleChildScrollView(
-            child: FadeTransition(
-              opacity: _fadeContent,
-              child: SlideTransition(
-                position: _slideContent,
+          // ================= CONTENT =================
+          FadeTransition(
+            opacity: _fade,
+            child: SlideTransition(
+              position: _slide,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 140, bottom: 140),
                 child: Column(
                   children: [
-                    const SizedBox(height: 110),
-
-                    // ---------- FOTO PROFIL ----------
-                    Center(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.22),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            "assets/images/hmif.jpg",
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ---------- EMAIL + ROLE ----------
-                    Obx(() {
-                      return Column(
-                        children: [
-                          Text(
-                            c.email.value,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.22),
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(color: Colors.white, width: 1),
-                            ),
-                            child: Text(
-                              c.role.value.toUpperCase(),
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-
-                    const SizedBox(height: 35),
-
-                    // ================= GLASS CARD =================
+                    // ================= PROFILE CARD =================
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 20),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 22, vertical: 26),
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
                       decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(26),
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Obx(() {
+                        return Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: ClipOval(
+                                child: Image.asset(
+                                  "assets/images/hmif.jpg",
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              c.email.value,
+                              style: GoogleFonts.inter(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                color: text,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.teal.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                c.role.value.toUpperCase(),
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1,
+                                  color: Colors.teal.shade800,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ================= MENU CARD =================
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.06),
                             blurRadius: 12,
-                            offset: const Offset(0, 4),
+                            offset: const Offset(0, 6),
                           ),
                         ],
                       ),
-
                       child: Column(
                         children: [
-                          _sectionTitle("Akun", textColor),
-
+                          _sectionTitle("INFORMASI", text),
                           _menuItem(
-                            icon: Icons.person_outline,
-                            title: "Edit Profil",
-                            colorText: textColor,
-                            onTap: () {
-                              Get.snackbar(
-                                "Info",
-                                "Fitur edit profil akan ditambahkan.",
-                                snackPosition: SnackPosition.BOTTOM,
-                                backgroundColor: Colors.teal.shade50,
-                                colorText: Colors.teal.shade900,
-                              );
-                            },
+                            icon: Icons.workspace_premium_outlined,
+                            title: "Benefit Masuk HMIF",
+                            onTap: () => Get.toNamed(Routes.BENEFIT_HMIF),
+                            textColor: text,
                           ),
 
                           _menuItem(
-                            icon: Icons.lock_outline,
-                            title: "Keamanan",
-                            colorText: textColor,
-                            onTap: () {},
+                            icon: Icons.location_on_outlined,
+                            title: "Lokasi Sekretariat UMM",
+                            onTap: () => Get.toNamed(Routes.LOKASI_SEKRETARIAT),
+                            textColor: text,
                           ),
-
                           _menuItem(
-                            icon: Icons.notifications_none,
-                            title: "Notifikasi",
-                            colorText: textColor,
-                            onTap: () {},
+                            icon: Icons.contact_mail_outlined,
+                            title: "Kontak Kami",
+                            onTap: () => Get.toNamed(Routes.CONTACT),
+                            textColor: text,
                           ),
 
                           _menuItem(
                             icon: Icons.info_outline,
                             title: "Tentang Aplikasi",
-                            colorText: textColor,
-                            onTap: () {},
+                            onTap: () => Get.toNamed(Routes.ABOUT),
+                            textColor: text,
                           ),
-
-                          const SizedBox(height: 14),
-                          Divider(color: Colors.grey.shade300),
-                          const SizedBox(height: 14),
-
-                          // LOGOUT
-                          GestureDetector(
-                            onTap: () => auth.logout(),
+                          const Divider(height: 28),
+                          InkWell(
+                            onTap: auth.logout,
+                            borderRadius: BorderRadius.circular(14),
                             child: Row(
                               children: [
-                                const Icon(Icons.logout,
-                                    color: Colors.redAccent, size: 27),
-                                const SizedBox(width: 14),
+                                const Icon(
+                                  Icons.logout,
+                                  color: Colors.redAccent,
+                                ),
+                                const SizedBox(width: 12),
                                 Text(
                                   "Logout",
                                   style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
                                     color: Colors.redAccent,
                                   ),
                                 ),
@@ -304,8 +228,42 @@ class _ProfileViewState extends State<ProfileView>
                         ],
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
-                    const SizedBox(height: 60),
+          // ================= APP BAR (PALING ATAS) =================
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _circleBtn(
+                      Icons.arrow_back_ios_new_rounded,
+                      () => Get.back(),
+                    ),
+                    Text(
+                      "Profil",
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    _circleBtn(
+                      themeC.isDark ? Icons.dark_mode : Icons.light_mode,
+                      () => themeC.toggleTheme(),
+                    ),
                   ],
                 ),
               ),
@@ -313,11 +271,94 @@ class _ProfileViewState extends State<ProfileView>
           ),
         ],
       ),
+
+      // ================= FOOTER =================
+      bottomNavigationBar: _modernFooter(context, isDark),
     );
   }
 
-  // ================= SECTION TITLE =================
-  Widget _sectionTitle(String title, Color textColor) {
+  // ================= FOOTER =================
+  Widget _modernFooter(BuildContext context, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : null,
+        gradient: isDark
+            ? null
+            : const LinearGradient(
+                colors: [
+                  Color(0xFF009688),
+                  Color(0xFF4DB6AC),
+                  Color(0xFF80CBC4),
+                ],
+              ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.22),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _footerItem(Icons.home, "Beranda", 0),
+          _footerItem(Icons.event, "Agenda", 1),
+          _footerItem(Icons.notifications, "Notifikasi", 2),
+          _footerItem(Icons.person, "Profil", 3),
+        ],
+      ),
+    );
+  }
+
+  Widget _footerItem(IconData icon, String label, int index) {
+    final active = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() => _currentIndex = index);
+        if (index == 0) Get.offAllNamed(Routes.HOME);
+        if (index == 1) Get.offAllNamed(Routes.AGENDA_ORGANISASI);
+        if (index == 2) Get.offAllNamed(Routes.NOTIFIKASI);
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 26, color: active ? Colors.white : Colors.white70),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: active ? FontWeight.bold : FontWeight.normal,
+              color: active ? Colors.white : Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= UTIL =================
+  Widget _circleBtn(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(30),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.25),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, Color color) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
@@ -325,21 +366,20 @@ class _ProfileViewState extends State<ProfileView>
         child: Text(
           title,
           style: GoogleFonts.inter(
-            fontSize: 17,
-            color: textColor,
-            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: color,
           ),
         ),
       ),
     );
   }
 
-  // ================= MENU ITEM =================
   Widget _menuItem({
     required IconData icon,
     required String title,
-    required Color colorText,
     required VoidCallback onTap,
+    required Color textColor,
   }) {
     return InkWell(
       onTap: onTap,
@@ -351,23 +391,26 @@ class _ProfileViewState extends State<ProfileView>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.teal.withOpacity(0.15),
+                color: Colors.teal.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: Colors.teal.shade700, size: 22),
+              child: Icon(icon, color: Colors.teal.shade700),
             ),
             const SizedBox(width: 16),
             Text(
               title,
               style: GoogleFonts.inter(
-                fontSize: 16,
-                color: colorText,
-                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: textColor,
               ),
             ),
             const Spacer(),
-            Icon(Icons.arrow_forward_ios,
-                size: 17, color: colorText.withOpacity(0.45)),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: textColor.withOpacity(0.4),
+            ),
           ],
         ),
       ),

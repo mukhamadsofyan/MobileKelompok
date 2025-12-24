@@ -1,8 +1,7 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:orgtrack/modules/lokasi/controllers/lokasi_controller.dart';
 
 class LokasiService {
-  // CEK & MINTA IZIN
+  // ================= CEK & MINTA IZIN =================
   Future<bool> checkAndRequestPermission() async {
     LocationPermission perm = await Geolocator.checkPermission();
 
@@ -16,25 +15,26 @@ class LokasiService {
     return await Geolocator.isLocationServiceEnabled();
   }
 
-  // GET CURRENT POSITION
-  Future<Position> getCurrentPosition(LocationModeType mode) async {
+  // ================= GET CURRENT POSITION =================
+  Future<Position> getCurrentPosition({
+    LocationAccuracy accuracy = LocationAccuracy.best,
+  }) async {
     return Geolocator.getCurrentPosition(
       locationSettings: LocationSettings(
-        accuracy: mode == LocationModeType.gps
-            ? LocationAccuracy.best
-            : LocationAccuracy.medium,
+        accuracy: accuracy,
       ),
     );
   }
 
-  // STREAM LOKASI
-  Stream<Position> getPositionStream(LocationModeType mode) {
+  // ================= STREAM LOKASI =================
+  Stream<Position> getPositionStream({
+    LocationAccuracy accuracy = LocationAccuracy.best,
+    int distanceFilter = 1,
+  }) {
     return Geolocator.getPositionStream(
       locationSettings: LocationSettings(
-        accuracy: mode == LocationModeType.gps
-            ? LocationAccuracy.best
-            : LocationAccuracy.medium,
-        distanceFilter: 1,
+        accuracy: accuracy,
+        distanceFilter: distanceFilter,
       ),
     );
   }
