@@ -1,16 +1,46 @@
-# kelompok
+# OrgTrack
 
-A new Flutter project.
+OrgTrack adalah aplikasi mobile berbasis **Flutter** yang digunakan untuk membantu manajemen organisasi mahasiswa, mulai dari agenda kegiatan, absensi, notifikasi, hingga pengelolaan data anggota secara terstruktur dan efisien.
 
-## Getting Started
+Aplikasi ini dikembangkan sebagai bagian dari **tugas/kerja kelompok** dan ditujukan untuk mempermudah koordinasi serta transparansi kegiatan organisasi.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## Fitur Utama
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- 🔐 **Autentikasi Pengguna**
+  - Login & Register
+  - Role User & Admin
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- 📅 **Manajemen Agenda Organisasi**
+  - Tambah, edit, hapus agenda
+  - Agenda aktif & agenda expired
+
+- ✅ **Absensi Kegiatan**
+  - Absensi berbasis agenda
+  - Lock & unlock absensi oleh admin
+  - Rekap absensi (termasuk agenda expired)
+
+- 🔔 **Notifikasi**
+  - Notifikasi kegiatan & informasi organisasi
+
+- 👤 **Manajemen Profil**
+  - Data anggota
+  - Role & hak akses
+
+- 🌙 **Dark Mode & Light Mode**
+
+---
+
+## Tech Stack
+
+- **Flutter** (Frontend Mobile)
+- **GetX** (State Management & Routing)
+- **Supabase** (Authentication & Database)
+- **Hive** (Local Storage)
+- **Firebase Cloud Messaging (FCM)** (Push Notification)
+
+---
+
+## Struktur Project (Ringkas)
+
