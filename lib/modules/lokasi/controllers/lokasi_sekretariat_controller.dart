@@ -4,10 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class LokasiSekretariatController extends GetxController {
   /// Koordinat Sekretariat UMM
-  final LatLng umm = const LatLng(
-    -7.921350,
-    112.596130,
-  );
+  final LatLng umm = const LatLng(-7.920096016242471, 112.59698267976684);
 
   /// Buka Google Maps
   Future<void> openMaps() async {
@@ -16,14 +13,8 @@ class LokasiSekretariatController extends GetxController {
 
     final uri = Uri.parse(url);
 
-    if (!await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    )) {
-      Get.snackbar(
-        "Error",
-        "Tidak dapat membuka Google Maps",
-      );
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      Get.snackbar("Error", "Tidak dapat membuka Google Maps");
     }
   }
 }

@@ -12,7 +12,7 @@
 
     <application
         android:name="${applicationName}"
-        android:label="kelompok"
+        android:label="OrgTrack"
         android:icon="@mipmap/ic_launcher">
 
         <activity

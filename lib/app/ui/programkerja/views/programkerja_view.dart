@@ -24,7 +24,6 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
   late final ProgramControllerDio dioC;
   late final ModeController modeC;
 
-  // search
   final RxString q = "".obs;
 
   @override
@@ -46,7 +45,6 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
     }
   }
 
-  // sama persis seperti Bidang (gradient teal)
   List<Color> _headerGradient(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return isDark
@@ -65,6 +63,115 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
     }).toList();
   }
 
+  // ================= POPUP DETAIL =================
+  void _showDetailPopup(BuildContext context, dynamic p) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final cardColor = Theme.of(context).cardColor;
+
+    Get.dialog(
+      Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      (p.judul ?? "-").toString(),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: textColor),
+                    onPressed: () => Get.back(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                "Deskripsi Program",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: textColor.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                (p.deskripsi ?? "Tidak ada deskripsi").toString(),
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.6,
+                  color: textColor.withOpacity(0.85),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.work_outline, color: Colors.teal),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "Bidang: ${widget.bidangName}",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Get.back(),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    "Tutup",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeC = Get.find<ThemeController>();
@@ -76,10 +183,8 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
       backgroundColor: bg,
       body: Obx(() {
         final isHttp = modeC.mode.value == FetchMode.http;
-
         final listRaw = isHttp ? httpC.programList : dioC.programList;
         final loading = isHttp ? httpC.loadingProgram : dioC.loadingProgram;
-
         final list = _filterList(listRaw);
 
         if (loading.value) {
@@ -88,11 +193,9 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
 
         return Column(
           children: [
-            // ==========================================================
-            // HEADER (SAMA POLA DENGAN BIDANG)
-            // ==========================================================
+            // ================= HEADER RAPI =================
             Container(
-              padding: const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 12),
+              padding: const EdgeInsets.fromLTRB(20, 48, 20, 20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: _headerGradient(context),
@@ -107,9 +210,7 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // row atas: back - title - actions (theme + dropdown)
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
                         onTap: () => Get.back(),
@@ -119,15 +220,15 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
                           size: 22,
                         ),
                       ),
-
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               "Program Kerja",
-                              textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 22,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,
                               ),
@@ -135,9 +236,6 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
                             const SizedBox(height: 2),
                             Text(
                               widget.bidangName,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -147,88 +245,47 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
                           ],
                         ),
                       ),
-
-                      Row(
-                        children: [
-                          // toggle theme (sama seperti Bidang)
-                          Obx(() {
-                            return IconButton(
-                              icon: Icon(
-                                themeC.isDark ? Icons.dark_mode : Icons.light_mode,
-                                size: 26,
-                                color: Colors.white,
-                              ),
-                              onPressed: () => themeC.toggleTheme(),
-                            );
-                          }),
-
-                          const SizedBox(width: 6),
-
-                          // mode dropdown pill (sama seperti Bidang)
-                          Obx(() {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: DropdownButton<FetchMode>(
-                                value: modeC.mode.value,
-                                underline: const SizedBox(),
-                                dropdownColor: cardColor,
-                                icon: const Icon(Icons.expand_more, color: Colors.white),
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                                items: const [
-                                  DropdownMenuItem(value: FetchMode.http, child: Text("HTTP")),
-                                  DropdownMenuItem(value: FetchMode.dio, child: Text("DIO")),
-                                ],
-                                onChanged: (val) {
-                                  if (val != null) modeC.mode.value = val;
-                                },
-                              ),
-                            );
-                          }),
-                        ],
+                      IconButton(
+                        onPressed: () => themeC.toggleTheme(),
+                        icon: Icon(
+                          themeC.isDark
+                              ? Icons.dark_mode
+                              : Icons.light_mode,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 18),
-
-                  // search bar pill (sama seperti Bidang)
                   Container(
+                    height: 46,
                     decoration: BoxDecoration(
                       color: cardColor,
                       borderRadius: BorderRadius.circular(26),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(
-                            Theme.of(context).brightness == Brightness.dark ? 0.30 : 0.10,
+                            Theme.of(context).brightness == Brightness.dark
+                                ? 0.25
+                                : 0.12,
                           ),
                           blurRadius: 8,
-                          offset: const Offset(0, 2),
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: TextField(
-                      style: TextStyle(color: textColor),
                       onChanged: (v) => q.value = v,
+                      style: TextStyle(color: textColor),
                       decoration: InputDecoration(
                         hintText: "Cari program kerja...",
-                        hintStyle: TextStyle(color: textColor.withOpacity(0.6)),
-                        prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                        hintStyle:
+                            TextStyle(color: textColor.withOpacity(0.6)),
+                        prefixIcon:
+                            const Icon(Icons.search, color: Colors.teal),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        suffixIcon: Obx(() {
-                          if (q.value.isEmpty) return const SizedBox();
-                          return IconButton(
-                            icon: Icon(Icons.close_rounded, color: textColor.withOpacity(0.8)),
-                            onPressed: () {
-                              q.value = "";
-                              FocusScope.of(context).unfocus();
-                            },
-                          );
-                        }),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
                   ),
@@ -236,17 +293,16 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
               ),
             ),
 
-            const SizedBox(height: 10),
-
-            // ==========================================================
-            // LIST PROGRAM KERJA (CARD STYLE KAYAK BIDANG)
-            // ==========================================================
+            // ================= LIST =================
             Expanded(
               child: list.isEmpty
                   ? Center(
                       child: Text(
-                        q.value.isEmpty ? "Belum ada program kerja" : "Tidak ada hasil pencarian",
-                        style: TextStyle(color: textColor.withOpacity(0.85)),
+                        q.value.isEmpty
+                            ? "Belum ada program kerja"
+                            : "Tidak ada hasil pencarian",
+                        style:
+                            TextStyle(color: textColor.withOpacity(0.8)),
                       ),
                     )
                   : ListView.builder(
@@ -254,11 +310,9 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
                       itemCount: list.length,
                       itemBuilder: (_, i) {
                         final p = list[i];
-
                         return Card(
                           color: cardColor,
                           margin: const EdgeInsets.only(bottom: 12),
-                          elevation: Theme.of(context).brightness == Brightness.dark ? 0 : 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
@@ -267,7 +321,6 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
                               (p.judul ?? "-").toString(),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
                                 color: textColor,
                               ),
                             ),
@@ -279,19 +332,16 @@ class _ProgramKerjaViewState extends State<ProgramKerjaView> {
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: textColor.withOpacity(0.75),
-                                  height: 1.3,
                                 ),
                               ),
                             ),
                             trailing: Icon(
                               Icons.arrow_forward_ios,
                               size: 16,
-                              color: textColor.withOpacity(0.7),
+                              color: textColor.withOpacity(0.6),
                             ),
-                            onTap: () {
-                              // kalau kamu punya halaman detail, taruh di sini
-                              // Get.to(() => ProgramKerjaDetailView(data: p));
-                            },
+                            onTap: () =>
+                                _showDetailPopup(context, p),
                           ),
                         );
                       },

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/AgendaModel.dart';
 import '../controllers/attendance_controller.dart';
 import '../../../controllers/auth_controller.dart';
+import '../../../controllers/theme_controller.dart';
 
 class AttendanceView extends StatefulWidget {
   final AgendaOrganisasi agenda;
@@ -20,20 +21,120 @@ class _AttendanceViewState extends State<AttendanceView> {
 
   late final AttendanceController c;
   late final AuthController authC;
+  late final ThemeController themeC;
+
+  String get _tag => 'attendance_${widget.agenda.id}';
 
   @override
   void initState() {
     super.initState();
-    c = Get.find<AttendanceController>();
+
+    // controller per agenda
+    c = Get.put(AttendanceController(agenda: widget.agenda), tag: _tag);
+
     authC = Get.find<AuthController>();
+    themeC = Get.find<ThemeController>();
 
     _scroll.addListener(() {
       setState(() => _offset = _scroll.offset);
     });
   }
 
+  @override
+  void dispose() {
+    _scroll.dispose();
+    Get.delete<AttendanceController>(tag: _tag);
+    super.dispose();
+  }
+
   bool get isAdmin => authC.isAdmin;
   bool get isExpired => widget.agenda.date.isBefore(DateTime.now());
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
+
+  // =========================================================
+  // 🔔 NOTIFIKASI DI ATAS (FIX – TEMBUS STACK & HEADER)
+  // =========================================================
+  void showTopNotif({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color bg,
+  }) {
+    Get.rawSnackbar(
+      snackPosition: SnackPosition.TOP,
+      snackStyle: SnackStyle.FLOATING,
+      backgroundColor: bg,
+      borderRadius: 16,
+
+      // 🔑 KUNCI POSISI PALING ATAS
+      margin: EdgeInsets.fromLTRB(
+        16,
+        MediaQuery.of(context).padding.top + 12,
+        16,
+        0,
+      ),
+
+      duration: const Duration(seconds: 2),
+
+      messageText: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(message, style: const TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= BACK HANDLER =================
+  Future<bool> _handleBack() async {
+    if (!c.isLocked.value) {
+      final confirm = await Get.dialog<bool>(
+        AlertDialog(
+          title: const Text("Perubahan belum disimpan"),
+          content: const Text("Absensi belum disimpan. Simpan sebelum keluar?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(Get.overlayContext!).pop(false);
+              },
+              child: const Text("Batal"),
+            ),
+            TextButton(
+              onPressed: () async {
+                await c.saveAttendance();
+                showTopNotif(
+                  title: "Berhasil",
+                  message: "Absensi berhasil disimpan",
+                  icon: Icons.save,
+                  bg: Colors.teal.shade600,
+                );
+                Navigator.of(Get.overlayContext!).pop(true);
+              },
+              child: const Text("Simpan & Keluar"),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return false;
+    }
+    return true;
+  }
 
   Color _blend(Color a, Color b) {
     final t = (_offset / 200).clamp(0.0, 1.0);
@@ -51,131 +152,162 @@ class _AttendanceViewState extends State<AttendanceView> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: cs.background,
+    return WillPopScope(
+      onWillPop: _handleBack,
+      child: Scaffold(
+        backgroundColor: cs.background,
 
-      // ================= FAB (ADMIN & TIDAK EXPIRED) =================
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Obx(() {
-        // ❗ expired = READ ONLY (admin pun tidak boleh edit)
-        if (!isAdmin || c.isLocked.value || isExpired) {
-          return const SizedBox();
-        }
+        // ================= BOTTOM BUTTON =================
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: Obx(() {
+          if (!isAdmin || isExpired) return const SizedBox();
 
-        return SizedBox(
-          width: MediaQuery.of(context).size.width - 32,
-          child: FilledButton.icon(
-            onPressed: c.lockAttendance,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+          return SizedBox(
+            width: MediaQuery.of(context).size.width - 32,
+            child: FilledButton.icon(
+              icon: Icon(c.isLocked.value ? Icons.edit : Icons.save),
+              label: Text(
+                c.isLocked.value ? "EDIT ABSENSI" : "SIMPAN ABSENSI",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              onPressed: () async {
+                if (c.isLocked.value) {
+                  c.confirmEditAttendance();
+                  showTopNotif(
+                    title: "Mode Edit",
+                    message: "Absensi sekarang bisa diedit",
+                    icon: Icons.edit,
+                    bg: Colors.orange.shade600,
+                  );
+                } else {
+                  await c.saveAttendance();
+                  showTopNotif(
+                    title: "Berhasil",
+                    message: "Absensi berhasil disimpan",
+                    icon: Icons.save,
+                    bg: Colors.teal.shade600,
+                  );
+                }
+              },
+            ),
+          );
+        }),
+
+        body: Stack(
+          children: [
+            // ================= HEADER =================
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              height: _headerHeight(),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    _blend(const Color(0xFF009688), const Color(0xFF004D40)),
+                    _blend(const Color(0xFF4DB6AC), const Color(0xFF00796B)),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: _headerRadius(),
               ),
             ),
-            icon: const Icon(Icons.lock_rounded),
-            label: const Text(
-              "SIMPAN & KUNCI ABSENSI",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        );
-      }),
 
-      body: Stack(
-        children: [
-          // ================= HEADER =================
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            height: _headerHeight(),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  _blend(const Color(0xFF009688), const Color(0xFF004D40)),
-                  _blend(const Color(0xFF4DB6AC), const Color(0xFF00796B)),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: _headerRadius(),
-            ),
-          ),
-
-          // ================= CONTENT =================
-          SafeArea(
-            child: SingleChildScrollView(
-              controller: _scroll,
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 140),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // BACK + TITLE
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_rounded,
-                            color: Colors.white),
-                        onPressed: Get.back,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        "Absensi",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+            // ================= CONTENT =================
+            SafeArea(
+              child: SingleChildScrollView(
+                controller: _scroll,
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 140),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ================= TOP BAR =================
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_rounded,
+                            color: Colors.white,
+                          ),
+                          onPressed: () async {
+                            final canBack = await _handleBack();
+                            if (canBack) Get.back();
+                          },
                         ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            "Absensi",
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            isDark
+                                ? Icons.light_mode_rounded
+                                : Icons.dark_mode_rounded,
+                            color: Colors.white,
+                          ),
+                          onPressed: themeC.toggleTheme,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+                    _agendaCard(cs),
+                    const SizedBox(height: 20),
+                    _statusBanner(cs),
+                    const SizedBox(height: 20),
+                    Obx(() => _stats(cs)),
+
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Daftar Anggota",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 12),
 
-                  const SizedBox(height: 20),
-                  _agendaCard(cs),
-
-                  const SizedBox(height: 20),
-                  _statusBanner(cs),
-
-                  const SizedBox(height: 20),
-                  _stats(cs),
-
-                  const SizedBox(height: 24),
-                  const Text(
-                    "Daftar Anggota",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // ================= LIST =================
-                  Obx(() {
-                    if (c.loading.value) {
-                      return const Center(
-                        child: Padding(
+                    Obx(() {
+                      if (c.loading.value) {
+                        return const Padding(
                           padding: EdgeInsets.all(40),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    }
-
-                    return Column(
-                      children: c.strukturalList.map((s) {
-                        final id = s.id;
-                        final hadir = id != null
-                            ? c.attendanceMap[id] ?? false
-                            : false;
-
-                        return _memberTile(
-                          cs: cs,
-                          name: s.name,
-                          role: s.role,
-                          hadir: hadir,
+                          child: Center(child: CircularProgressIndicator()),
                         );
-                      }).toList(),
-                    );
-                  }),
-                ],
+                      }
+
+                      return Column(
+                        children: c.strukturalList.map((s) {
+                          final id = s.id!;
+                          final hadir = c.attendanceMap[id] ?? false;
+
+                          return _memberTile(
+                            cs: cs,
+                            id: id,
+                            name: s.name,
+                            role: s.role,
+                            hadir: hadir,
+                          );
+                        }).toList(),
+                      );
+                    }),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -208,8 +340,9 @@ class _AttendanceViewState extends State<AttendanceView> {
               const Icon(Icons.event, size: 18),
               const SizedBox(width: 6),
               Text(
-                DateFormat('EEEE, dd MMM yyyy • HH:mm')
-                    .format(widget.agenda.date),
+                DateFormat(
+                  'EEEE, dd MMM yyyy • HH:mm',
+                ).format(widget.agenda.date),
               ),
             ],
           ),
@@ -218,36 +351,36 @@ class _AttendanceViewState extends State<AttendanceView> {
     );
   }
 
-  // ================= STATUS BANNER =================
+  // ================= STATUS =================
   Widget _statusBanner(ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isExpired ? cs.errorContainer : cs.secondaryContainer,
+        color: isExpired
+            ? cs.errorContainer
+            : c.isLocked.value
+            ? cs.tertiaryContainer
+            : cs.secondaryContainer,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
           Icon(
-            isExpired ? Icons.event_busy : Icons.visibility,
-            color: isExpired
-                ? cs.onErrorContainer
-                : cs.onSecondaryContainer,
+            isExpired
+                ? Icons.event_busy
+                : c.isLocked.value
+                ? Icons.lock
+                : Icons.edit,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               isExpired
                   ? "Agenda telah terlampaui. Absensi hanya dapat dilihat."
-                  : isAdmin
-                      ? "Admin dapat mengubah status kehadiran"
-                      : "Anda hanya dapat melihat absensi",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isExpired
-                    ? cs.onErrorContainer
-                    : cs.onSecondaryContainer,
-              ),
+                  : c.isLocked.value
+                  ? "Absensi telah disimpan dan dikunci"
+                  : "Absensi dapat diedit",
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -257,14 +390,11 @@ class _AttendanceViewState extends State<AttendanceView> {
 
   // ================= STATS =================
   Widget _stats(ColorScheme cs) {
-    final total = c.strukturalList.length;
-    final hadir = c.attendanceMap.values.where((e) => e == true).length;
-
     return Row(
       children: [
-        _stat("Hadir", hadir, Colors.green),
-        _stat("Tidak", total - hadir, Colors.red),
-        _stat("Total", total, Colors.teal),
+        _stat("Hadir", c.hadirCount.value, Colors.green),
+        _stat("Tidak", c.tidakCount.value, Colors.red),
+        _stat("Total", c.totalCount.value, Colors.teal),
       ],
     );
   }
@@ -291,13 +421,16 @@ class _AttendanceViewState extends State<AttendanceView> {
     );
   }
 
-  // ================= MEMBER TILE (READ ONLY) =================
+  // ================= MEMBER TILE =================
   Widget _memberTile({
     required ColorScheme cs,
+    required int id,
     required String name,
     required String role,
     required bool hadir,
   }) {
+    final canEdit = isAdmin && !isExpired && !c.isLocked.value;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -310,14 +443,30 @@ class _AttendanceViewState extends State<AttendanceView> {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: cs.primaryContainer,
-          child: Text(name.isNotEmpty ? name[0] : "?"),
+          child: Text(name[0]),
         ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(role),
-        trailing: Icon(
-          hadir ? Icons.check_circle : Icons.cancel,
-          color: hadir ? Colors.green : Colors.red,
-        ),
+        trailing: canEdit
+            ? Switch(
+                value: hadir,
+                activeColor: cs.primary,
+                onChanged: (val) {
+                  c.toggleAttendance(id, val);
+                  showTopNotif(
+                    title: "Absensi Diperbarui",
+                    message: val
+                        ? "Anggota ditandai HADIR"
+                        : "Anggota ditandai TIDAK HADIR",
+                    icon: val ? Icons.check_circle : Icons.cancel,
+                    bg: val ? Colors.green.shade600 : Colors.red.shade600,
+                  );
+                },
+              )
+            : Icon(
+                hadir ? Icons.check_circle : Icons.cancel,
+                color: hadir ? Colors.green : Colors.red,
+              ),
       ),
     );
   }

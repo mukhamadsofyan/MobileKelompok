@@ -110,7 +110,7 @@ class SupabaseDB {
 
     return await supabase
         .from('struktural')
-        .update(s.toUpdateMap()) // ← tanpa ID
+        .update(s.toUpdateMap())
         .eq('id', s.id!);
   }
 
@@ -174,41 +174,35 @@ class SupabaseDB {
   }
 
   Future<dynamic> deleteAgenda(int id) async {
-    // Hapus attendance dulu
+    // Hapus attendance dulu (INI BENAR)
     await deleteAttendanceByAgenda(id);
 
-    // Baru hapus agenda
     return await supabase.from('agenda_organisasi').delete().eq('id', id);
   }
 
-  // ================= CRUD ATTENDANCE =================
-  Future<List<Map<String, dynamic>>> getAttendanceByAgenda(int agendaId) async {
-    return await supabase.from('attendance').select().eq('agenda_id', agendaId);
-  }
+  // ================= CRUD ATTENDANCE (FIX TOTAL) =================
 
-  Future<dynamic> markAttendance(
-      int agendaId, int strukturalId, bool present) async {
-    final existing = await supabase
+  Future<List<Map<String, dynamic>>> getAttendanceByAgenda(int agendaId) async {
+    return await supabase
         .from('attendance')
         .select()
-        .eq('agenda_id', agendaId)
-        .eq('struktural_id', strukturalId);
-
-    if (existing.isNotEmpty) {
-      return await supabase
-          .from('attendance')
-          .update({'present': present ? 1 : 0})
-          .eq('agenda_id', agendaId)
-          .eq('struktural_id', strukturalId);
-    }
-
-    return await supabase.from('attendance').insert({
-      'agenda_id': agendaId,
-      'struktural_id': strukturalId,
-      'present': present ? 1 : 0,
-    });
+        .eq('agenda_id', agendaId);
   }
 
+  /// 🔥 INI YANG DIBENARKAN (UPSERT, BUKAN SELECT + UPDATE)
+  Future<dynamic> markAttendance(
+      int agendaId, int strukturalId, bool present) async {
+    return await supabase.from('attendance').upsert(
+      {
+        'agenda_id': agendaId,
+        'struktural_id': strukturalId,
+        'present': present ? 1 : 0,
+      },
+      onConflict: 'agenda_id,struktural_id',
+    );
+  }
+
+  /// Dipakai saat hapus agenda (TETAP ADA)
   Future<dynamic> deleteAttendanceByAgenda(int agendaId) async {
     return await supabase.from('attendance').delete().eq('agenda_id', agendaId);
   }

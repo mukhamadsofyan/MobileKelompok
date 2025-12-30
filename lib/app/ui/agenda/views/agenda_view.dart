@@ -616,246 +616,301 @@ class _AgendaViewState extends State<AgendaView> {
 
     final titleC = TextEditingController(text: agenda?.title ?? '');
     final descC = TextEditingController(text: agenda?.description ?? '');
-    DateTime? selected = agenda?.date;
+    final date = Rx<DateTime?>(agenda?.date);
 
-    // ================= PICK DATE & TIME =================
-    Future<void> pick(StateSetter setModalState) async {
-      final now = DateTime.now();
-      final initialDate = selected != null && selected!.isAfter(now)
-          ? selected!
-          : now;
-
-      final d = await showDatePicker(
-        context: context,
-        initialDate: initialDate,
-        firstDate: DateTime(now.year, now.month, now.day),
-        lastDate: DateTime(2100),
-      );
-
-      if (d != null) {
-        final t = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay.fromDateTime(
-            selected != null && selected!.isAfter(now) ? selected! : now,
-          ),
-        );
-
-        if (t != null) {
-          final picked = DateTime(d.year, d.month, d.day, t.hour, t.minute);
-
-          if (picked.isBefore(now)) {
-            Get.snackbar(
-              "Waktu Tidak Valid",
-              "Agenda harus dijadwalkan ke waktu mendatang",
-              snackPosition: SnackPosition.TOP,
-              backgroundColor: Colors.red.shade600,
-              colorText: Colors.white,
-              margin: const EdgeInsets.all(16),
-              borderRadius: 16,
-              icon: const Icon(Icons.error, color: Colors.white),
-            );
-            return;
-          }
-
-          setModalState(() => selected = picked);
-        }
-      }
-    }
-
-    // ================= BOTTOM SHEET =================
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF121212)
-          : const Color(0xFFF7F9F8),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setModalState) {
+    Get.bottomSheet(
+      DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.55,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx, scroll) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final isValid = titleC.text.trim().isNotEmpty && selected != null;
 
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              top: 18,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(ctx).cardColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
             ),
             child: SingleChildScrollView(
+              controller: scroll,
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 16,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ================= DRAG HANDLE =================
                   Center(
                     child: Container(
-                      width: 46,
+                      width: 42,
                       height: 5,
+                      margin: const EdgeInsets.only(bottom: 24),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 22),
 
-                  // ================= TITLE =================
+                  // ================= HEADER =================
                   Row(
                     children: [
-                      Icon(
-                        agenda == null
-                            ? Icons.event_available
-                            : Icons.edit_calendar,
-                        color: Colors.teal.shade700,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        agenda == null ? "Tambah Agenda" : "Edit Agenda",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.teal.shade800,
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Icon(
+                          agenda == null
+                              ? Icons.event_available
+                              : Icons.edit_calendar,
+                          color: Colors.teal,
+                          size: 26,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Divider(color: Colors.teal.shade100),
-                  const SizedBox(height: 18),
-
-                  // ================= INPUT =================
-                  TextFormField(
-                    controller: titleC,
-                    onChanged: (_) => setModalState(() {}),
-                    decoration: _input(
-                      ctx,
-                      "Judul Agenda",
-                      icon: Icons.title_rounded,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: descC,
-                    maxLines: 3,
-                    decoration: _input(
-                      ctx,
-                      "Deskripsi (opsional)",
-                      icon: Icons.notes_rounded,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ================= PICK DATE =================
-                  InkWell(
-                    onTap: () => pick(setModalState),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 18,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: selected == null
-                              ? Colors.grey.shade300
-                              : Colors.teal.shade400,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Row(
+                      const SizedBox(width: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.calendar_today,
-                            color: Colors.teal.shade700,
+                          Text(
+                            agenda == null ? "Tambah Agenda" : "Edit Agenda",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              selected == null
-                                  ? "Pilih tanggal & waktu"
-                                  : DateFormat(
-                                      'dd MMM yyyy • HH:mm',
-                                    ).format(selected!),
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: selected == null
-                                    ? Colors.grey.shade600
-                                    : Colors.teal.shade800,
-                              ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "Lengkapi data agenda organisasi",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
                             ),
                           ),
                         ],
                       ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ================= JUDUL =================
+                  const Text(
+                    "Judul Agenda",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: titleC,
+                    decoration: InputDecoration(
+                      hintText: "Contoh: Rapat Bulanan",
+                      prefixIcon: const Icon(Icons.title_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 26),
+                  const SizedBox(height: 22),
 
-                  // ================= SAVE =================
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isValid
-                          ? () {
-                              final item = AgendaOrganisasi(
-                                id: agenda?.id,
-                                title: titleC.text.trim(),
-                                description: descC.text.trim(),
-                                date: selected!,
-                              );
+                  // ================= DESKRIPSI =================
+                  const Text(
+                    "Deskripsi",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: descC,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: "Deskripsi agenda (opsional)",
+                      prefixIcon: const Icon(Icons.notes_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
 
-                              agenda == null
-                                  ? controller.addAgenda(item)
-                                  : controller.updateAgenda(item);
+                  const SizedBox(height: 22),
 
-                              Get.back();
+                  // ================= TANGGAL =================
+                  const Text(
+                    "Tanggal & Waktu",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  Obx(
+                    () => InkWell(
+                      onTap: () async {
+                        final now = DateTime.now();
 
-                              // ================= NOTIFIKASI =================
+                        final d = await showDatePicker(
+                          context: ctx,
+                          initialDate: date.value ?? now,
+                          firstDate: now,
+                          lastDate: DateTime(2100),
+                        );
+
+                        if (d != null) {
+                          final t = await showTimePicker(
+                            context: ctx,
+                            initialTime: TimeOfDay.fromDateTime(
+                              date.value ?? now,
+                            ),
+                          );
+
+                          if (t != null) {
+                            final picked = DateTime(
+                              d.year,
+                              d.month,
+                              d.day,
+                              t.hour,
+                              t.minute,
+                            );
+
+                            if (picked.isBefore(now)) {
                               Get.snackbar(
-                                "Berhasil",
-                                agenda == null
-                                    ? "Agenda berhasil ditambahkan"
-                                    : "Agenda berhasil diperbarui",
+                                "Waktu Tidak Valid",
+                                "Agenda harus di masa depan",
                                 snackPosition: SnackPosition.TOP,
-                                backgroundColor: Colors.teal.shade600,
+                                backgroundColor: Colors.redAccent,
                                 colorText: Colors.white,
                                 margin: const EdgeInsets.all(16),
                                 borderRadius: 16,
-                                icon: Icon(
-                                  agenda == null
-                                      ? Icons.event_available
-                                      : Icons.edit_calendar,
+                                icon: const Icon(
+                                  Icons.error,
                                   color: Colors.white,
                                 ),
-                                duration: const Duration(seconds: 2),
                               );
+                              return;
                             }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        elevation: isValid ? 4 : 0,
-                        backgroundColor: isValid
-                            ? Colors.teal.shade700
-                            : Colors.grey.shade300,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+
+                            date.value = picked;
+                          }
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
                         ),
-                      ),
-                      child: Text(
-                        "SIMPAN AGENDA",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.8,
-                          color: isValid ? Colors.white : Colors.grey.shade600,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded),
+                            const SizedBox(width: 12),
+                            Text(
+                              date.value == null
+                                  ? "Pilih tanggal & waktu"
+                                  : DateFormat(
+                                      'dd MMM yyyy • HH:mm',
+                                    ).format(date.value!),
+                            ),
+                          ],
                         ),
                       ),
                     ),
+                  ),
+
+                  const SizedBox(height: 36),
+
+                  // ================= BUTTON =================
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Get.back(),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: const Text("Batal"),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (titleC.text.trim().isEmpty ||
+                                date.value == null) {
+                              Get.snackbar(
+                                "Gagal",
+                                "Judul dan tanggal wajib diisi",
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Colors.redAccent,
+                                colorText: Colors.white,
+                                margin: const EdgeInsets.all(16),
+                                borderRadius: 16,
+                                icon: const Icon(
+                                  Icons.error,
+                                  color: Colors.white,
+                                ),
+                              );
+                              return;
+                            }
+
+                            final item = AgendaOrganisasi(
+                              id: agenda?.id,
+                              title: titleC.text.trim(),
+                              description: descC.text.trim(),
+                              date: date.value!,
+                            );
+
+                            agenda == null
+                                ? controller.addAgenda(item)
+                                : controller.updateAgenda(item);
+
+                            Get.back();
+
+                            Get.snackbar(
+                              "Berhasil",
+                              agenda == null
+                                  ? "Agenda berhasil ditambahkan"
+                                  : "Agenda berhasil diperbarui",
+                              snackPosition: SnackPosition.TOP,
+                              backgroundColor: Colors.teal.shade600,
+                              colorText: Colors.white,
+                              margin: const EdgeInsets.all(16),
+                              borderRadius: 16,
+                              icon: Icon(
+                                agenda == null
+                                    ? Icons.event_available
+                                    : Icons.edit_calendar,
+                                color: Colors.white,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          child: Text(
+                            agenda == null ? "SIMPAN" : "UPDATE",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -863,6 +918,8 @@ class _AgendaViewState extends State<AgendaView> {
           );
         },
       ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
   }
 

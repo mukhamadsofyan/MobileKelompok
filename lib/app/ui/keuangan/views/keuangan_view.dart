@@ -846,8 +846,18 @@ class KeuanganView extends StatelessWidget {
                               Get.snackbar(
                                 "Gagal",
                                 "Semua field wajib diisi",
-                                snackPosition: SnackPosition.BOTTOM,
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Colors.redAccent,
+                                colorText: Colors.white,
+                                margin: const EdgeInsets.all(16),
+                                borderRadius: 16,
+                                icon: const Icon(
+                                  Icons.error_rounded,
+                                  color: Colors.white,
+                                ),
+                                duration: const Duration(seconds: 2),
                               );
+
                               return;
                             }
 
@@ -866,20 +876,32 @@ class KeuanganView extends StatelessWidget {
                               Get.snackbar(
                                 "Berhasil",
                                 "Transaksi berhasil ditambahkan",
-                                snackPosition: SnackPosition.BOTTOM,
+                                snackPosition: SnackPosition.TOP,
                                 backgroundColor: Colors.green.shade600,
                                 colorText: Colors.white,
-                                margin: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.all(16),
+                                borderRadius: 16,
+                                icon: const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Colors.white,
+                                ),
+                                duration: const Duration(seconds: 2),
                               );
                             } else {
                               await c.updateKeuangan(data);
                               Get.snackbar(
                                 "Berhasil",
                                 "Transaksi berhasil diperbarui",
-                                snackPosition: SnackPosition.BOTTOM,
+                                snackPosition: SnackPosition.TOP,
                                 backgroundColor: Colors.blue.shade600,
                                 colorText: Colors.white,
-                                margin: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.all(16),
+                                borderRadius: 16,
+                                icon: const Icon(
+                                  Icons.update_rounded,
+                                  color: Colors.white,
+                                ),
+                                duration: const Duration(seconds: 2),
                               );
                             }
                           },
