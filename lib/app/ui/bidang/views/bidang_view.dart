@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:orgtrack/app/ui/bidang/controllers/bidang_controller.dart';
-import 'package:orgtrack/app/controllers/theme_controller.dart'; // 🔥 ADD
+import 'package:orgtrack/app/controllers/theme_controller.dart';
 import '../controllers/bidang_controller_http.dart';
 import '../controllers/bidang_controller_dio.dart';
 import '../../programkerja/views/programkerja_view.dart';
@@ -21,30 +21,36 @@ class _BidangViewState extends State<BidangView> {
   @override
   void initState() {
     super.initState();
+
     httpC = Get.put(BidangControllerHttp());
     dioC = Get.put(BidangControllerDio());
     modeC = Get.put(ModeControllerBidang());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (modeC.mode.value == FetchMode.http) {
-        httpC.fetchBidang();
-      } else {
-        dioC.fetchBidang();
-      }
+      _fetchData();
     });
 
-    ever<FetchMode>(modeC.mode, (m) {
-      if (m == FetchMode.http) {
-        httpC.fetchBidang();
-      } else {
-        dioC.fetchBidang();
-      }
+    ever<FetchMode>(modeC.mode, (_) {
+      _fetchData();
     });
   }
 
-  // ====================================================================
+  // ============================================================
+  // FETCH + NOTIFIKASI (PINDAH KE ATAS)
+  // ============================================================
+  void _fetchData() async {
+    if (modeC.mode.value == FetchMode.http) {
+      await httpC.fetchBidang();
+    } else {
+      await dioC.fetchBidang();
+    }
+
+    if (!mounted) return;
+  }
+
+  // ============================================================
   // HEADER GRADIENT
-  // ====================================================================
+  // ============================================================
   List<Color> _headerGradient(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return isDark
@@ -62,7 +68,7 @@ class _BidangViewState extends State<BidangView> {
 
   @override
   Widget build(BuildContext context) {
-    final themeC = Get.find<ThemeController>(); // 🔥 ADD
+    final themeC = Get.find<ThemeController>();
     final bg = Theme.of(context).colorScheme.background;
     final cardColor = Theme.of(context).cardColor;
     final textColor = Theme.of(context).colorScheme.onBackground;
@@ -80,11 +86,12 @@ class _BidangViewState extends State<BidangView> {
 
         return Column(
           children: [
-            // ====================================================================
+            // ============================================================
             // HEADER
-            // ====================================================================
+            // ============================================================
             Container(
-              padding: const EdgeInsets.only(top: 45, left: 20, right: 20, bottom: 12),
+              padding: const EdgeInsets.only(
+                  top: 45, left: 20, right: 20, bottom: 12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: _headerGradient(context),
@@ -99,7 +106,7 @@ class _BidangViewState extends State<BidangView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ROW HEADER + TOGGLE THEME
+                  // ROW HEADER
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -111,7 +118,6 @@ class _BidangViewState extends State<BidangView> {
                           size: 22,
                         ),
                       ),
-
                       const Text(
                         "Bidang",
                         style: TextStyle(
@@ -120,27 +126,24 @@ class _BidangViewState extends State<BidangView> {
                           color: Colors.white,
                         ),
                       ),
-
                       Row(
                         children: [
-                          // 🔥 TOGGLE THEME BUTTON
                           Obx(() {
                             return IconButton(
                               icon: Icon(
-                                themeC.isDark ? Icons.dark_mode : Icons.light_mode,
-                                size: 26,
+                                themeC.isDark
+                                    ? Icons.dark_mode
+                                    : Icons.light_mode,
                                 color: Colors.white,
                               ),
                               onPressed: () => themeC.toggleTheme(),
                             );
                           }),
-
                           const SizedBox(width: 6),
-
-                          // MODE DROPDOWN (HTTP / DIO)
                           Obx(() {
                             return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.25),
                                 borderRadius: BorderRadius.circular(12),
@@ -149,8 +152,8 @@ class _BidangViewState extends State<BidangView> {
                                 value: modeC.mode.value,
                                 underline: const SizedBox(),
                                 dropdownColor: cardColor,
-                                icon: const Icon(Icons.expand_more, color: Colors.white),
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                icon: const Icon(Icons.expand_more,
+                                    color: Colors.white),
                                 items: const [
                                   DropdownMenuItem(
                                     value: FetchMode.http,
@@ -161,8 +164,8 @@ class _BidangViewState extends State<BidangView> {
                                     child: Text("DIO"),
                                   ),
                                 ],
-                                onChanged: (val) {
-                                  if (val != null) modeC.mode.value = val;
+                                onChanged: (v) {
+                                  if (v != null) modeC.mode.value = v;
                                 },
                               ),
                             );
@@ -179,23 +182,16 @@ class _BidangViewState extends State<BidangView> {
                     decoration: BoxDecoration(
                       color: cardColor,
                       borderRadius: BorderRadius.circular(26),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(
-                              Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: TextField(
                       style: TextStyle(color: textColor),
                       decoration: InputDecoration(
                         hintText: "Cari bidang...",
-                        hintStyle: TextStyle(color: textColor.withOpacity(0.6)),
-                        prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                        prefixIcon:
+                            const Icon(Icons.search, color: Colors.teal),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
                       ),
                     ),
                   ),
@@ -205,7 +201,9 @@ class _BidangViewState extends State<BidangView> {
 
             const SizedBox(height: 10),
 
-            // LIST BIDANG
+            // ============================================================
+            // LIST
+            // ============================================================
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -215,7 +213,6 @@ class _BidangViewState extends State<BidangView> {
                   return Card(
                     color: cardColor,
                     margin: const EdgeInsets.only(bottom: 12),
-                    elevation: Theme.of(context).brightness == Brightness.dark ? 0 : 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
@@ -224,15 +221,10 @@ class _BidangViewState extends State<BidangView> {
                         b.nama,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
                           color: textColor,
                         ),
                       ),
-                      trailing: Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: textColor.withOpacity(0.7),
-                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
                         Get.to(() => ProgramKerjaView(
                               bidangId: b.id,
